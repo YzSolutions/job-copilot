@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hybrid Job Copilot</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">INDIGITUAL VENTURES</p>
+      <h1>Private by default.<br />Powerful by choice.</h1>
+      <p class="lede">Match résumés locally. Send only an approved section when stronger cloud reasoning is needed.</p>
+
+      <section class="status" aria-label="AI status">
+        <span id="source-badge" data-source="UNAVAILABLE">UNAVAILABLE</span>
+        <span>Gemini Nano: <strong id="nano-status">checking…</strong></span>
+      </section>
+
+      <p id="setup-message" class="notice" hidden>Firebase setup is required before inference tests can run.</p>
+
+      <section class="card">
+        <p class="step">01 · LOCAL</p>
+        <h2>Choose the strongest résumé</h2>
+        <p>Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.</p>
+        <button id="run-local" type="button">Analyze on device</button>
+      </section>
+
+      <section class="card cloud">
+        <p class="step">02 · WITH PERMISSION</p>
+        <h2>Improve one section</h2>
+        <p>Preview the exact professional content before approving a cloud request.</p>
+        <button id="run-cloud" type="button">Review cloud request</button>
+      </section>
+
+      <section class="result-card" aria-live="polite">
+        <h2>Result</h2>
+        <pre id="result">Run a test to see its verified inference source.</pre>
+      </section>
+    </main>
+
+    <dialog id="cloud-consent">
+      <form method="dialog">
+        <p class="step">CLOUD CONSENT</p>
+        <h2>Only this content will leave your device</h2>
+        <pre id="consent-preview"></pre>
+        <p class="privacy-note">No name, email, phone, address, citizenship, sponsorship, clearance, veteran, disability, demographic or EEO data is included.</p>
+        <div class="actions">
+          <button value="cancel" class="secondary">Keep it local</button>
+          <button value="approve">Approve cloud request</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="panel.js"></script>
+  </body>
+</html>
+

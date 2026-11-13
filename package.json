@@ -1,0 +1,28 @@
+{
+  "name": "indigitual-hybrid-job-copilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Privacy-visible hybrid AI proof for the Google #BuildHybridAI 2026 hackathon",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:debug": "node scripts/build.mjs --debug",
+    "package": "node scripts/package.mjs",
+    "pretest": "node scripts/test-build.mjs",
+    "test": "node --test test/*.test.js",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run typecheck && npm test && npm run build && npm run package"
+  },
+  "dependencies": {
+    "firebase": "13.3.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.1.36",
+    "esbuild": "0.27.0",
+    "typescript": "7.0.2"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.13.6"
+  }
+}
+

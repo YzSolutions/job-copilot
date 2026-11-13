@@ -1,0 +1,34 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color: #10231d;
+  background: #f4f1e8;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { padding: 28px 20px 48px; }
+h1 { margin: 8px 0 12px; font-size: 32px; line-height: 1.04; letter-spacing: -1.2px; }
+h2 { margin: 4px 0 8px; font-size: 18px; }
+p { line-height: 1.5; }
+.eyebrow, .step { margin: 0; color: #287259; font-size: 11px; font-weight: 800; letter-spacing: 1.5px; }
+.lede { margin: 0 0 20px; color: #4a5c55; }
+.status { display: flex; gap: 10px; align-items: center; padding: 10px 0 18px; font-size: 12px; }
+#source-badge { padding: 5px 8px; border-radius: 999px; color: white; background: #6b746f; font-size: 10px; font-weight: 800; letter-spacing: .7px; }
+#source-badge[data-source="ON_DEVICE"] { background: #087f5b; }
+#source-badge[data-source="IN_CLOUD"] { background: #3b5bdb; }
+#source-badge[data-source="ERROR"] { background: #c92a2a; }
+.notice { padding: 10px 12px; border-left: 3px solid #d97706; background: #fff7e6; }
+.card, .result-card { margin-top: 14px; padding: 18px; border: 1px solid #d7d2c3; border-radius: 14px; background: #fffdf7; box-shadow: 0 8px 24px rgba(30, 50, 43, .06); }
+.card.cloud { border-color: #b9c8ee; background: #f7f9ff; }
+button { width: 100%; padding: 11px 14px; border: 0; border-radius: 9px; color: white; background: #10231d; font: inherit; font-weight: 750; cursor: pointer; }
+button:hover { background: #1c4939; }
+button:focus-visible { outline: 3px solid #f59f00; outline-offset: 2px; }
+button:disabled { cursor: not-allowed; opacity: .45; }
+pre { margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+dialog { width: min(420px, calc(100vw - 28px)); max-height: calc(100vh - 32px); overflow: auto; border: 0; border-radius: 16px; padding: 20px; color: #10231d; background: #fffdf7; box-shadow: 0 20px 80px rgba(0, 0, 0, .32); }
+dialog::backdrop { background: rgba(5, 20, 15, .62); }
+.privacy-note { padding: 10px; border-radius: 8px; background: #e9f7f0; font-size: 12px; }
+.actions { display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; margin-top: 14px; }
+.actions .secondary { color: #10231d; background: #e7e2d5; }
+

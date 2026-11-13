@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "InDigitual Hybrid Job Copilot",
+  "version": "0.1.0",
+  "description": "Choose the best resume locally and approve only the sections sent to cloud AI.",
+  "minimum_chrome_version": "139",
+  "permissions": ["sidePanel", "storage", "activeTab"],
+  "action": {
+    "default_title": "Open Hybrid Job Copilot"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://*.googleapis.com https://*.firebaseapp.com https://*.gstatic.com"
+  }
+}
+
