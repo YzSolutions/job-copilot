@@ -29,6 +29,55 @@
       </section>
 
       <section class="card">
+        <p class="step">CANDIDATE VAULT · LOCAL ONLY</p>
+        <h2>Save reusable application details</h2>
+        <p>These details stay in this Chrome profile. They are not included in résumé analysis or cloud requests.</p>
+        <form id="candidate-vault">
+          <label for="vault-full-name">Full name</label>
+          <input id="vault-full-name" name="fullName" autocomplete="name" />
+
+          <label for="vault-email">Application email</label>
+          <input id="vault-email" name="email" type="email" autocomplete="email" />
+
+          <label for="vault-phone">Phone</label>
+          <input id="vault-phone" name="phone" type="tel" autocomplete="tel" />
+
+          <label for="vault-street-address">Street address</label>
+          <input id="vault-street-address" name="streetAddress" autocomplete="street-address" />
+
+          <div class="field-grid">
+            <div>
+              <label for="vault-city">City</label>
+              <input id="vault-city" name="city" autocomplete="address-level2" />
+            </div>
+            <div>
+              <label for="vault-state">State</label>
+              <input id="vault-state" name="state" autocomplete="address-level1" />
+            </div>
+          </div>
+
+          <label for="vault-postal-code">Postal code</label>
+          <input id="vault-postal-code" name="postalCode" autocomplete="postal-code" />
+
+          <label for="vault-work-authorization">Work authorization</label>
+          <input id="vault-work-authorization" name="workAuthorization" placeholder="Example: U.S. citizen" />
+
+          <label for="vault-sponsorship">Requires sponsorship?</label>
+          <select id="vault-sponsorship" name="sponsorship">
+            <option value="">Choose an answer</option>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+
+          <label for="vault-clearance">Clearance</label>
+          <input id="vault-clearance" name="clearance" placeholder="Example: Active Public Trust" />
+
+          <button type="submit">Save locally</button>
+        </form>
+        <p id="vault-status" class="file-status" aria-live="polite">No candidate details saved yet.</p>
+      </section>
+
+      <section class="card">
         <p class="step">01 · LOCAL</p>
         <h2>Choose the strongest résumé</h2>
         <p id="local-description">Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.</p>

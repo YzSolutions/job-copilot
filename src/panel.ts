@@ -27,6 +27,11 @@ import {
 } from "./firebase-config.js";
 import { mergeResumes, parseDocxFile } from "./docx.js";
 import type { Resume } from "./prompts.js";
+import {
+  completedVaultFields,
+  emptyCandidateVault,
+  normalizeCandidateVault
+} from "./vault.js";
 
 declare const __APP_CHECK_DEBUG__: boolean | string;
 declare global {
@@ -53,10 +58,13 @@ const routeMessage = document.querySelector<HTMLElement>("#route-message")!;
 const resumeFiles = document.querySelector<HTMLInputElement>("#resume-files")!;
 const resumeStatus = document.querySelector<HTMLElement>("#resume-status")!;
 const localDescription = document.querySelector<HTMLElement>("#local-description")!;
+const vaultForm = document.querySelector<HTMLFormElement>("#candidate-vault")!;
+const vaultStatus = document.querySelector<HTMLElement>("#vault-status")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
 const resumeStorageKey = "localResumes";
+const vaultStorageKey = "candidateVault";
 
 function setState(source: "ON_DEVICE" | "IN_CLOUD" | "UNAVAILABLE" | "ERROR", message: string) {
   badge.textContent = source.replace("_", " ");
@@ -118,6 +126,26 @@ async function loadLocalResumes() {
     : [];
   showResumeStatus();
 }
+
+async function loadCandidateVault() {
+  const stored = (await chrome.storage.local.get(vaultStorageKey))[vaultStorageKey];
+  const vault = normalizeCandidateVault(stored);
+  for (const [name, value] of Object.entries(vault)) {
+    const field = vaultForm.elements.namedItem(name);
+    if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.value = value;
+  }
+  const completed = completedVaultFields(vault);
+  vaultStatus.textContent = completed
+    ? `${completed} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`
+    : "No candidate details saved yet.";
+}
+
+vaultForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const vault = normalizeCandidateVault(Object.fromEntries(new FormData(vaultForm)));
+  await chrome.storage.local.set({ [vaultStorageKey]: vault });
+  vaultStatus.textContent = `${completedVaultFields(vault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`;
+});
 
 resumeFiles.addEventListener("change", async () => {
   const files = Array.from(resumeFiles.files ?? []);
@@ -220,5 +248,6 @@ consentDialog.addEventListener("close", async () => {
 
 initializeFirebase();
 loadLocalResumes();
+loadCandidateVault();
 refreshNanoStatus();
 

@@ -22,6 +22,13 @@ p { line-height: 1.5; }
 .card, .result-card { margin-top: 14px; padding: 18px; border: 1px solid #d7d2c3; border-radius: 14px; background: #fffdf7; box-shadow: 0 8px 24px rgba(30, 50, 43, .06); }
 .card.cloud { border-color: #b9c8ee; background: #f7f9ff; }
 input[type="file"] { width: 100%; padding: 10px; border: 1px dashed #8c978f; border-radius: 9px; background: white; font: inherit; }
+.card form { display: grid; gap: 7px; }
+.card label { margin-top: 5px; font-size: 12px; font-weight: 750; }
+.card input:not([type="file"]), .card select { width: 100%; padding: 10px; border: 1px solid #aeb7b1; border-radius: 9px; color: #10231d; background: white; font: inherit; }
+.card input:focus-visible, .card select:focus-visible { outline: 3px solid #f59f00; outline-offset: 1px; border-color: transparent; }
+.field-grid { display: grid; grid-template-columns: 1.5fr .75fr; gap: 8px; }
+.field-grid > div { display: grid; gap: 7px; }
+.card form button { margin-top: 8px; }
 .file-status { margin: 10px 0 0; color: #4a5c55; font-size: 12px; }
 button { width: 100%; padding: 11px 14px; border: 0; border-radius: 9px; color: white; background: #10231d; font: inherit; font-weight: 750; cursor: pointer; }
 button:hover { background: #1c4939; }
