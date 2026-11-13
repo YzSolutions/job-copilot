@@ -54,9 +54,10 @@ Next we will add encrypted local résumé import, job-page extraction, user-revi
 - esbuild
 - Node.js test runner
 
-## Links still required
+## Submission links
 
-- Public Apache-2.0 GitHub repository
+- Public Apache-2.0 GitHub repository: https://github.com/YzSolutions/job-copilot
+- License: https://github.com/YzSolutions/job-copilot/blob/main/LICENSE
 - Public or unlisted YouTube demo under three minutes
 - Optional hosted product or Chrome Web Store listing
 - Screenshots and 3:2 thumbnail
@@ -82,7 +83,7 @@ Job Copilot uses Firebase AI Logic for both required inference paths in a Manife
 
 Install the organizer-provided private judge build as an unpacked Chrome extension. Confirm Gemini Nano status, run **Analyze on device**, and verify the badge reads **ON DEVICE**. Open **Review cloud request**, inspect the exact minimized fictional payload, choose **Keep it local** once, then reopen and approve it to verify the badge reads **IN CLOUD**. If Gemini Nano is unavailable, the extension must state that nothing was sent to the cloud. The private App Check debug token will be provided only through Devpost testing instructions and is not present in the public repository or production ZIP.
 
-## Final attestations requiring Yahya's confirmation
+## Confirmed attestations
 
 - Yahya is at least the age of majority where he resides.
 - Yahya resides in an eligible jurisdiction.

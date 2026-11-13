@@ -14,7 +14,8 @@
 - Gemini Nano downloaded in Chrome and completed a real `ON_DEVICE` comparison of the fictional resumes with no cloud fallback. It recommended the business-architecture resume and explained the match and missing requirements.
 - Firebase AI Logic is enabled on the Spark plan, and App Check shows `Registered (Enforced)` for the web app.
 - A consent-gated `IN_CLOUD` test completed successfully after displaying the exact minimized fictional payload. The response rewrote only the selected resume section using the supplied verified evidence.
-- Yahya Zia is registered for `#BuildHybridAI 2026` on Devpost as a solo Web/Chrome entrant. The `Job Copilot` draft has been created and its overview saved.
+- Yahya Zia is registered for `#BuildHybridAI 2026` on Devpost as a solo Web/Chrome entrant. The `Job Copilot` draft is 3/5 steps complete; its overview, eligibility, disclosure, technology explanation, repository, and license details are saved.
+- The source is public at https://github.com/YzSolutions/job-copilot under Apache-2.0.
 
 ## Not yet proven
 
