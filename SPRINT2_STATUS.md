@@ -4,6 +4,7 @@
 
 - Five local résumé variants selected by Yahya Zia.
 - Local-only DOCX import and Chrome-profile storage added.
+- Multiple file selections merge safely so users can add or replace résumé variants without losing earlier imports.
 - All five selected DOCX files parsed successfully in the local verification run; no résumé content or filename was added to the source or production bundle.
 - Imported résumé text is used only by the `ONLY_ON_DEVICE` comparison.
 - Gemini Nano unavailable state offers a separate, explicit fictional cloud test; no automatic fallback exists.

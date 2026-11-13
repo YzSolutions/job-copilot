@@ -46,3 +46,10 @@ export function parseDocxBytes(bytes: Uint8Array, fileName: string): Resume {
 export async function parseDocxFile(file: File): Promise<Resume> {
   return parseDocxBytes(new Uint8Array(await file.arrayBuffer()), file.name);
 }
+
+export function mergeResumes(existing: Resume[], imported: Resume[]): Resume[] {
+  const importedIds = new Set(imported.map((resume) => resume.id));
+  const merged = [...existing.filter((resume) => !importedIds.has(resume.id)), ...imported];
+  if (merged.length > 5) throw new Error("Keep no more than five local résumés.");
+  return merged;
+}

@@ -24,7 +24,7 @@ import {
   hasFirebaseConfig,
   recaptchaEnterpriseSiteKey
 } from "./firebase-config.js";
-import { parseDocxFile } from "./docx.js";
+import { mergeResumes, parseDocxFile } from "./docx.js";
 import type { Resume } from "./prompts.js";
 
 declare const __APP_CHECK_DEBUG__: boolean | string;
@@ -126,7 +126,7 @@ resumeFiles.addEventListener("change", async () => {
     return;
   }
   try {
-    localResumes = await Promise.all(files.map(parseDocxFile));
+    localResumes = mergeResumes(localResumes, await Promise.all(files.map(parseDocxFile)));
     await chrome.storage.local.set({ [resumeStorageKey]: localResumes });
     showResumeStatus();
   } catch (error) {
