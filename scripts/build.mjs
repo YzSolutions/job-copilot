@@ -5,6 +5,7 @@ import { build } from "esbuild";
 const root = resolve(import.meta.dirname, "..");
 const dist = resolve(root, "dist");
 const debug = process.argv.includes("--debug");
+const appCheckDebug = debug ? process.env.JOB_COPILOT_APP_CHECK_DEBUG_TOKEN || true : false;
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
@@ -17,7 +18,7 @@ await build({
   target: "chrome139",
   minify: false,
   sourcemap: false,
-  define: { __APP_CHECK_DEBUG__: JSON.stringify(debug) }
+  define: { __APP_CHECK_DEBUG__: JSON.stringify(appCheckDebug) }
 });
 
 await Promise.all([

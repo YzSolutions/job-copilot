@@ -7,16 +7,18 @@ Sprint 1 technical proof for the Google #BuildHybridAI 2026 hackathon. The Chrom
 
 The interface reports the inference source and never silently falls back from local to cloud.
 
-## Current Sprint 1 scope
+## Current scope
 
 - Manifest V3 side-panel extension
 - Fictional job and résumé fixtures
+- Local-only import and storage of up to five DOCX résumés
 - Structured local résumé recommendation
 - Consent-gated cloud section patch
+- Explicit cloud choice when Gemini Nano is unavailable
 - Production and private debug builds
 - Packaged ZIP for judge installation
 
-Autofill, real résumé import, tracking and DOCX generation are intentionally deferred to later sprints.
+Autofill, tracking and DOCX generation are intentionally deferred to later sprints.
 
 ## Build
 
@@ -33,11 +35,13 @@ For a private App Check debug build:
 npm run build:debug
 ```
 
+To embed an already registered token in a private judge build, set `JOB_COPILOT_APP_CHECK_DEBUG_TOKEN` only for that local build. The generated `dist/` directory is ignored and must be rebuilt in production mode before publishing.
+
 Never publish a debug build or commit an App Check debug token. A private judge build and token may be shared only through Devpost's private testing instructions.
 
 ## Privacy boundary
 
-The cloud proof receives only fictional job requirements, one résumé section and verified professional evidence. It does not receive identity, contact, citizenship, sponsorship, clearance, veteran, disability, demographic or EEO data.
+Imported DOCX résumés remain in the user's Chrome profile and are used only by the `ONLY_ON_DEVICE` comparison. The cloud proof still receives only fictional job requirements, one fictional résumé section and fictional verified professional evidence. It does not receive identity, contact, citizenship, sponsorship, clearance, veteran, disability, demographic or EEO data.
 
 ## License
 

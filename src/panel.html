@@ -18,19 +18,28 @@
       </section>
 
       <p id="setup-message" class="notice" hidden>Firebase setup is required before inference tests can run.</p>
+      <p id="route-message" class="notice" hidden></p>
+
+      <section class="card">
+        <p class="step">YOUR RÉSUMÉS · LOCAL ONLY</p>
+        <h2>Load up to five DOCX résumés</h2>
+        <p>The files are read and stored by this Chrome profile. Uploading them here does not send them to Firebase or Gemini Cloud.</p>
+        <input id="resume-files" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple />
+        <p id="resume-status" class="file-status">Fictional demo résumés are active.</p>
+      </section>
 
       <section class="card">
         <p class="step">01 · LOCAL</p>
         <h2>Choose the strongest résumé</h2>
-        <p>Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.</p>
+        <p id="local-description">Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.</p>
         <button id="run-local" type="button">Analyze on device</button>
       </section>
 
       <section class="card cloud">
         <p class="step">02 · WITH PERMISSION</p>
         <h2>Improve one section</h2>
-        <p>Preview the exact professional content before approving a cloud request.</p>
-        <button id="run-cloud" type="button">Review cloud request</button>
+        <p>Preview the exact fictional professional content before approving a cloud request.</p>
+        <button id="run-cloud" type="button">Review fictional cloud request</button>
       </section>
 
       <section class="result-card" aria-live="polite">

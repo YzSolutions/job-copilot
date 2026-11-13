@@ -24,11 +24,13 @@ import {
   hasFirebaseConfig,
   recaptchaEnterpriseSiteKey
 } from "./firebase-config.js";
+import { parseDocxFile } from "./docx.js";
+import type { Resume } from "./prompts.js";
 
-declare const __APP_CHECK_DEBUG__: boolean;
+declare const __APP_CHECK_DEBUG__: boolean | string;
 declare global {
   interface Window {
-    FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean;
+    FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string;
     LanguageModel?: {
       availability: (options?: {
         expectedInputs?: Array<{ type: "text"; languages: string[] }>;
@@ -46,8 +48,14 @@ const result = document.querySelector<HTMLElement>("#result")!;
 const badge = document.querySelector<HTMLElement>("#source-badge")!;
 const setupMessage = document.querySelector<HTMLElement>("#setup-message")!;
 const nanoStatus = document.querySelector<HTMLElement>("#nano-status")!;
+const routeMessage = document.querySelector<HTMLElement>("#route-message")!;
+const resumeFiles = document.querySelector<HTMLInputElement>("#resume-files")!;
+const resumeStatus = document.querySelector<HTMLElement>("#resume-status")!;
+const localDescription = document.querySelector<HTMLElement>("#local-description")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
+let localResumes: Resume[] = [];
+const resumeStorageKey = "localResumes";
 
 function setState(source: "ON_DEVICE" | "IN_CLOUD" | "UNAVAILABLE" | "ERROR", message: string) {
   badge.textContent = source.replace("_", " ");
@@ -64,7 +72,7 @@ function initializeFirebase() {
   }
 
   const app = initializeApp(firebaseConfig);
-  if (__APP_CHECK_DEBUG__) window.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+  if (__APP_CHECK_DEBUG__) window.FIREBASE_APPCHECK_DEBUG_TOKEN = __APP_CHECK_DEBUG__;
   initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
     isTokenAutoRefreshEnabled: true
@@ -73,23 +81,67 @@ function initializeFirebase() {
 }
 
 async function refreshNanoStatus() {
+  let availability = "unavailable";
   try {
-    nanoStatus.textContent = window.LanguageModel
+    availability = window.LanguageModel
       ? await window.LanguageModel.availability({
           expectedInputs: [{ type: "text", languages: ["en"] }],
           expectedOutputs: [{ type: "text", languages: ["en"] }]
         })
       : "unsupported";
   } catch {
-    nanoStatus.textContent = "unavailable";
+    availability = "unavailable";
   }
+  nanoStatus.textContent = availability;
+  routeMessage.hidden = !["unsupported", "unavailable"].includes(availability);
+  routeMessage.textContent = routeMessage.hidden
+    ? ""
+    : "On-device AI is unavailable. Nothing was sent. You may separately review and approve the fictional cloud test below.";
 }
+
+function showResumeStatus() {
+  resumeStatus.textContent = localResumes.length
+    ? `${localResumes.length} local résumé${localResumes.length === 1 ? "" : "s"} loaded: ${localResumes.map((resume) => resume.label).join(", ")}`
+    : "Fictional demo résumés are active.";
+  localDescription.textContent = localResumes.length
+    ? `${localResumes.length} locally stored résumés will be compared to the fictional transformation role. No cloud fallback is allowed.`
+    : "Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.";
+}
+
+async function loadLocalResumes() {
+  const stored = (await chrome.storage.local.get(resumeStorageKey))[resumeStorageKey];
+  localResumes = Array.isArray(stored)
+    ? stored.filter((resume): resume is Resume =>
+        typeof resume?.id === "string" && typeof resume?.label === "string" && typeof resume?.professionalText === "string"
+      ).slice(0, 5)
+    : [];
+  showResumeStatus();
+}
+
+resumeFiles.addEventListener("change", async () => {
+  const files = Array.from(resumeFiles.files ?? []);
+  if (!files.length) return;
+  if (files.length > 5) {
+    resumeStatus.textContent = "Choose no more than five DOCX résumés.";
+    return;
+  }
+  try {
+    localResumes = await Promise.all(files.map(parseDocxFile));
+    await chrome.storage.local.set({ [resumeStorageKey]: localResumes });
+    showResumeStatus();
+  } catch (error) {
+    resumeStatus.textContent = error instanceof Error ? error.message : "The résumés could not be loaded.";
+  } finally {
+    resumeFiles.value = "";
+  }
+});
 
 localButton.addEventListener("click", async () => {
   if (!ai) return;
   localButton.disabled = true;
   setState("ON_DEVICE", "Preparing the on-device model…");
   try {
+    const resumes = localResumes.length ? localResumes : fictionalResumes;
     const model = getGenerativeModel(ai, {
       mode: InferenceMode.ONLY_ON_DEVICE,
       onDeviceParams: {
@@ -103,10 +155,10 @@ localButton.addEventListener("click", async () => {
     await model.initializeDeviceModel((progress) => {
       result.textContent = `Downloading local model: ${Math.round(progress * 100)}%`;
     });
-    const response = await model.generateContent(buildLocalPrompt(fictionalJob, fictionalResumes));
+    const response = await model.generateContent(buildLocalPrompt(fictionalJob, resumes));
     const parsed = parseMatchResult(
       response.response.text(),
-      fictionalResumes.map((resume) => resume.id)
+      resumes.map((resume) => resume.id)
     );
     setState(
       response.response.inferenceSource === InferenceSource.ON_DEVICE ? "ON_DEVICE" : "ERROR",
@@ -161,5 +213,6 @@ consentDialog.addEventListener("close", async () => {
 });
 
 initializeFirebase();
+loadLocalResumes();
 refreshNanoStatus();
 
