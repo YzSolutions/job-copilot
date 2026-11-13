@@ -7,6 +7,7 @@
 - Multiple file selections merge safely so users can add or replace résumé variants without losing earlier imports.
 - All five selected DOCX files parsed successfully in the local verification run; no résumé content or filename was added to the source or production bundle.
 - Imported résumé text is used only by the `ONLY_ON_DEVICE` comparison.
+- Full résumé variants are scored one at a time on-device, preventing the five-document prompt from exceeding Gemini Nano's input limit.
 - Gemini Nano unavailable state offers a separate, explicit fictional cloud test; no automatic fallback exists.
 - Private judge builds can receive a registered App Check debug token through a local environment variable that is never committed.
 - Type checking, six automated tests, production build, ZIP packaging, and the production dependency audit pass.

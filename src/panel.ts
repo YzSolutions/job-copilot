@@ -17,7 +17,8 @@ import {
   matchSchema,
   parseMatchResult,
   parseResumePatch,
-  patchSchema
+  patchSchema,
+  pickBestMatch
 } from "./prompts.js";
 import {
   firebaseConfig,
@@ -155,13 +156,18 @@ localButton.addEventListener("click", async () => {
     await model.initializeDeviceModel((progress) => {
       result.textContent = `Downloading local model: ${Math.round(progress * 100)}%`;
     });
-    const response = await model.generateContent(buildLocalPrompt(fictionalJob, resumes));
-    const parsed = parseMatchResult(
-      response.response.text(),
-      resumes.map((resume) => resume.id)
-    );
+    const scores = [];
+    for (const [index, resume] of resumes.entries()) {
+      result.textContent = `Scoring local résumé ${index + 1} of ${resumes.length}: ${resume.label}`;
+      const response = await model.generateContent(buildLocalPrompt(fictionalJob, [resume]));
+      if (response.response.inferenceSource !== InferenceSource.ON_DEVICE) {
+        throw new Error("A résumé score did not run on-device.");
+      }
+      scores.push(parseMatchResult(response.response.text(), [resume.id]));
+    }
+    const parsed = pickBestMatch(scores);
     setState(
-      response.response.inferenceSource === InferenceSource.ON_DEVICE ? "ON_DEVICE" : "ERROR",
+      "ON_DEVICE",
       `${parsed.score}/100 · ${parsed.reason}\n\nRecommended: ${parsed.recommendedResumeId}\nMissing: ${parsed.missingRequirements.join(", ") || "None"}`
     );
   } catch (error) {

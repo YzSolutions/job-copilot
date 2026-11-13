@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildCloudPrompt,
+  pickBestMatch,
   parseMatchResult,
   parseResumePatch
 } from "../dist-test/prompts.js";
@@ -42,5 +43,12 @@ test("patch parser binds the response to the requested section", () => {
     proposedText: "B",
     reason: "C"
   }), "summary"));
+});
+
+test("best match keeps the highest locally produced score", () => {
+  assert.equal(pickBestMatch([
+    { recommendedResumeId: "business", score: 84, reason: "A", missingRequirements: [] },
+    { recommendedResumeId: "healthcare", score: 91, reason: "B", missingRequirements: [] }
+  ]).recommendedResumeId, "healthcare");
 });
 

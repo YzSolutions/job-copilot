@@ -2,7 +2,7 @@ import { strFromU8, unzipSync } from "fflate";
 import type { Resume } from "./prompts.js";
 
 const MAX_DOCX_BYTES = 5 * 1024 * 1024;
-const MAX_RESUME_TEXT = 100_000;
+const MAX_RESUME_TEXT = 25_000;
 
 function decodeXml(text: string): string {
   return text

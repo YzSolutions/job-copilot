@@ -105,3 +105,8 @@ export function parseResumePatch(text: string, expectedSectionId: string): Resum
   return value as ResumePatch;
 }
 
+export function pickBestMatch(results: MatchResult[]): MatchResult {
+  if (!results.length) throw new Error("No résumé scores were produced.");
+  return results.reduce((best, result) => result.score > best.score ? result : best);
+}
+
