@@ -13,6 +13,7 @@ The interface reports the inference source and never silently falls back from lo
 - Fictional job and résumé fixtures
 - Local-only import and storage of up to five DOCX résumés
 - Local candidate vault for reusable identity, address, work-authorization, sponsorship, and clearance answers
+- On-demand local extraction and review of the active job page
 - Structured local résumé recommendation
 - Consent-gated cloud section patch
 - Explicit cloud choice when Gemini Nano is unavailable
@@ -42,7 +43,7 @@ Never publish a debug build or commit an App Check debug token. A private judge 
 
 ## Privacy boundary
 
-Imported DOCX résumés and candidate-vault answers remain in the user's Chrome profile. Résumés are used only by the `ONLY_ON_DEVICE` comparison; vault answers are not included in either AI path. The cloud proof still receives only fictional job requirements, one fictional résumé section and fictional verified professional evidence. It does not receive identity, contact, citizenship, sponsorship, clearance, veteran, disability, demographic or EEO data.
+Imported DOCX résumés, candidate-vault answers, and reviewed job pages remain in the user's Chrome profile. Résumés and reviewed job text are used only by the `ONLY_ON_DEVICE` comparison; vault answers are not included in either AI path. The cloud proof still receives only fictional job requirements, one fictional résumé section and fictional verified professional evidence. It does not receive captured job pages, identity, contact, citizenship, sponsorship, clearance, veteran, disability, demographic or EEO data.
 
 ## License
 

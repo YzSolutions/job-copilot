@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Choose the best resume locally and approve only the sections sent to cloud AI.",
   "minimum_chrome_version": "139",
-  "permissions": ["sidePanel", "storage", "activeTab"],
+  "permissions": ["sidePanel", "storage", "activeTab", "scripting"],
   "action": {
     "default_title": "Open Hybrid Job Copilot"
   },

@@ -6,6 +6,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; }
 main { padding: 28px 20px 48px; }
 h1 { margin: 8px 0 12px; font-size: 32px; line-height: 1.04; letter-spacing: -1.2px; }
@@ -24,8 +25,9 @@ p { line-height: 1.5; }
 input[type="file"] { width: 100%; padding: 10px; border: 1px dashed #8c978f; border-radius: 9px; background: white; font: inherit; }
 .card form { display: grid; gap: 7px; }
 .card label { margin-top: 5px; font-size: 12px; font-weight: 750; }
-.card input:not([type="file"]), .card select { width: 100%; padding: 10px; border: 1px solid #aeb7b1; border-radius: 9px; color: #10231d; background: white; font: inherit; }
-.card input:focus-visible, .card select:focus-visible { outline: 3px solid #f59f00; outline-offset: 1px; border-color: transparent; }
+.card input:not([type="file"]), .card select, .card textarea { width: 100%; padding: 10px; border: 1px solid #aeb7b1; border-radius: 9px; color: #10231d; background: white; font: inherit; }
+.card textarea { resize: vertical; line-height: 1.45; }
+.card input:focus-visible, .card select:focus-visible, .card textarea:focus-visible { outline: 3px solid #f59f00; outline-offset: 1px; border-color: transparent; }
 .field-grid { display: grid; grid-template-columns: 1.5fr .75fr; gap: 8px; }
 .field-grid > div { display: grid; gap: 7px; }
 .card form button { margin-top: 8px; }

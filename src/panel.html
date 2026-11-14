@@ -21,6 +21,24 @@
       <p id="route-message" class="notice" hidden></p>
 
       <section class="card">
+        <p class="step">CURRENT JOB · LOCAL ONLY</p>
+        <h2>Read this job page</h2>
+        <p>Job text is read only when you click. Review it before local résumé matching; it is not sent to cloud AI.</p>
+        <button id="read-job" type="button">Read current job page</button>
+        <form id="current-job" hidden>
+          <label for="job-title">Job title</label>
+          <input id="job-title" name="title" />
+          <label for="job-company">Company</label>
+          <input id="job-company" name="company" />
+          <label for="job-description">Job description</label>
+          <textarea id="job-description" name="description" rows="9"></textarea>
+          <input id="job-source-url" name="sourceUrl" type="hidden" />
+          <button type="submit">Save reviewed job locally</button>
+        </form>
+        <p id="job-status" class="file-status" aria-live="polite">No job page saved yet.</p>
+      </section>
+
+      <section class="card">
         <p class="step">YOUR RÉSUMÉS · LOCAL ONLY</p>
         <h2>Load up to five DOCX résumés</h2>
         <p>The files are read and stored by this Chrome profile. Uploading them here does not send them to Firebase or Gemini Cloud.</p>

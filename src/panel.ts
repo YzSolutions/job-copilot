@@ -32,6 +32,12 @@ import {
   emptyCandidateVault,
   normalizeCandidateVault
 } from "./vault.js";
+import {
+  currentJobPrompt,
+  emptyCurrentJob,
+  normalizeCurrentJob,
+  type CurrentJob
+} from "./job.js";
 
 declare const __APP_CHECK_DEBUG__: boolean | string;
 declare global {
@@ -60,11 +66,16 @@ const resumeStatus = document.querySelector<HTMLElement>("#resume-status")!;
 const localDescription = document.querySelector<HTMLElement>("#local-description")!;
 const vaultForm = document.querySelector<HTMLFormElement>("#candidate-vault")!;
 const vaultStatus = document.querySelector<HTMLElement>("#vault-status")!;
+const readJobButton = document.querySelector<HTMLButtonElement>("#read-job")!;
+const currentJobForm = document.querySelector<HTMLFormElement>("#current-job")!;
+const jobStatus = document.querySelector<HTMLElement>("#job-status")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
+let currentJob: CurrentJob = emptyCurrentJob;
 const resumeStorageKey = "localResumes";
 const vaultStorageKey = "candidateVault";
+const jobStorageKey = "currentJob";
 
 function setState(source: "ON_DEVICE" | "IN_CLOUD" | "UNAVAILABLE" | "ERROR", message: string) {
   badge.textContent = source.replace("_", " ");
@@ -112,9 +123,27 @@ function showResumeStatus() {
   resumeStatus.textContent = localResumes.length
     ? `${localResumes.length} local résumé${localResumes.length === 1 ? "" : "s"} loaded: ${localResumes.map((resume) => resume.label).join(", ")}`
     : "Fictional demo résumés are active.";
+  const jobName = currentJob.description ? `${currentJob.title || "the reviewed job"}${currentJob.company ? ` at ${currentJob.company}` : ""}` : "the fictional transformation role";
   localDescription.textContent = localResumes.length
-    ? `${localResumes.length} locally stored résumés will be compared to the fictional transformation role. No cloud fallback is allowed.`
-    : "Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.";
+    ? `${localResumes.length} locally stored résumés will be compared to ${jobName}. No cloud fallback is allowed.`
+    : `Two fictional résumés are compared to ${jobName}. No cloud fallback is allowed.`;
+}
+
+function showCurrentJob() {
+  for (const [name, value] of Object.entries(currentJob)) {
+    const field = currentJobForm.elements.namedItem(name);
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) field.value = value;
+  }
+  currentJobForm.hidden = !currentJob.description;
+  jobStatus.textContent = currentJob.description
+    ? `Saved locally: ${currentJob.title || "Untitled job"}${currentJob.company ? ` · ${currentJob.company}` : ""}`
+    : "No job page saved yet.";
+  showResumeStatus();
+}
+
+async function loadCurrentJob() {
+  currentJob = normalizeCurrentJob((await chrome.storage.local.get(jobStorageKey))[jobStorageKey]);
+  showCurrentJob();
 }
 
 async function loadLocalResumes() {
@@ -145,6 +174,34 @@ vaultForm.addEventListener("submit", async (event) => {
   const vault = normalizeCandidateVault(Object.fromEntries(new FormData(vaultForm)));
   await chrome.storage.local.set({ [vaultStorageKey]: vault });
   vaultStatus.textContent = `${completedVaultFields(vault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`;
+});
+
+readJobButton.addEventListener("click", async () => {
+  readJobButton.disabled = true;
+  jobStatus.textContent = "Reading visible job details from the active tab…";
+  try {
+    const response = await chrome.runtime.sendMessage({ type: "READ_CURRENT_JOB" }) as { ok?: boolean; job?: unknown; error?: string };
+    if (!response.ok) throw new Error(response.error || "The job page could not be read.");
+    currentJob = normalizeCurrentJob(response.job);
+    if (!currentJob.description) throw new Error("No readable job description was found on this page.");
+    await chrome.storage.local.set({ [jobStorageKey]: currentJob });
+    showCurrentJob();
+  } catch (error) {
+    jobStatus.textContent = error instanceof Error ? error.message : "The job page could not be read.";
+  } finally {
+    readJobButton.disabled = false;
+  }
+});
+
+currentJobForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  currentJob = normalizeCurrentJob(Object.fromEntries(new FormData(currentJobForm)));
+  if (!currentJob.description) {
+    jobStatus.textContent = "Add a job description before saving.";
+    return;
+  }
+  await chrome.storage.local.set({ [jobStorageKey]: currentJob });
+  showCurrentJob();
 });
 
 resumeFiles.addEventListener("change", async () => {
@@ -187,7 +244,8 @@ localButton.addEventListener("click", async () => {
     const scores = [];
     for (const [index, resume] of resumes.entries()) {
       result.textContent = `Scoring local résumé ${index + 1} of ${resumes.length}: ${resume.label}`;
-      const response = await model.generateContent(buildLocalPrompt(fictionalJob, [resume]));
+      const jobDescription = currentJob.description ? currentJobPrompt(currentJob) : fictionalJob;
+      const response = await model.generateContent(buildLocalPrompt(jobDescription, [resume]));
       if (response.response.inferenceSource !== InferenceSource.ON_DEVICE) {
         throw new Error("A résumé score did not run on-device.");
       }
@@ -247,6 +305,7 @@ consentDialog.addEventListener("close", async () => {
 });
 
 initializeFirebase();
+loadCurrentJob();
 loadLocalResumes();
 loadCandidateVault();
 refreshNanoStatus();
