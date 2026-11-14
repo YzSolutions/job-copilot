@@ -90,6 +90,25 @@
           <label for="vault-clearance">Clearance</label>
           <input id="vault-clearance" name="clearance" placeholder="Example: Active Public Trust" />
 
+          <label for="vault-linkedin">LinkedIn URL</label>
+          <input id="vault-linkedin" name="linkedInUrl" type="url" autocomplete="url" />
+
+          <label for="vault-salary">Salary target</label>
+          <input id="vault-salary" name="desiredSalary" placeholder="Example: $170,000" />
+
+          <label for="vault-start-date">Available start date</label>
+          <input id="vault-start-date" name="availableStartDate" type="date" />
+
+          <label for="vault-relocate">Willing to relocate?</label>
+          <select id="vault-relocate" name="willingToRelocate">
+            <option value="">Choose an answer</option>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+
+          <label for="vault-travel">Travel preference</label>
+          <input id="vault-travel" name="travelPreference" placeholder="Example: Up to 10%" />
+
           <button type="submit">Save locally</button>
         </form>
         <p id="vault-status" class="file-status" aria-live="polite">No candidate details saved yet.</p>
@@ -97,15 +116,19 @@
 
       <section class="card">
         <p class="step">01 · LOCAL</p>
-        <h2>Choose the strongest résumé</h2>
+        <h2>Learn your experience and choose the strongest résumé</h2>
         <p id="local-description">Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.</p>
-        <button id="run-local" type="button">Analyze on device</button>
+        <button id="run-local" type="button">Analyze and prepare on device</button>
+        <div id="candidate-insights" hidden>
+          <h3>What local AI learned</h3>
+          <pre id="candidate-profile"></pre>
+        </div>
       </section>
 
       <section class="card cloud">
         <p class="step">02 · WITH PERMISSION</p>
         <h2>Improve one section</h2>
-        <p>Paste only the section you want improved and the evidence that supports it. Nothing is sent until you review and approve the exact request.</p>
+        <p>Local AI prepares the exact job requirement, résumé section, and supporting evidence. You can edit them, and nothing is sent until you review and approve the exact request.</p>
         <form id="cloud-tailoring">
           <label for="tailor-job-requirements">Relevant job requirements</label>
           <textarea id="tailor-job-requirements" name="jobRequirements" rows="5" maxlength="6000" required></textarea>

@@ -14,14 +14,18 @@ import { cloudFixture, fictionalJob, fictionalResumes } from "./fixtures.js";
 import {
   buildCloudPrompt,
   buildLocalPrompt,
+  buildLocalTailoringPlanPrompt,
   cloudRequestContainsKnownPrivateValue,
   matchSchema,
   normalizeCloudTailoringRequest,
+  parseLocalTailoringPlan,
   parseMatchResult,
   parseResumePatch,
   patchSchema,
   pickBestMatch,
-  type CloudTailoringRequest
+  tailoringPlanSchema,
+  type CloudTailoringRequest,
+  type LocalTailoringPlan
 } from "./prompts.js";
 import {
   firebaseConfig,
@@ -33,6 +37,7 @@ import type { Resume } from "./prompts.js";
 import {
   completedVaultFields,
   emptyCandidateVault,
+  missingCandidateVaultFields,
   normalizeCandidateVault,
   type CandidateVault
 } from "./vault.js";
@@ -77,15 +82,21 @@ const cloudForm = document.querySelector<HTMLFormElement>("#cloud-tailoring")!;
 const cloudDemoButton = document.querySelector<HTMLButtonElement>("#load-cloud-demo")!;
 const cloudStatus = document.querySelector<HTMLElement>("#cloud-status")!;
 const tailoringJobRequirements = document.querySelector<HTMLTextAreaElement>("#tailor-job-requirements")!;
+const tailoringResumeSection = document.querySelector<HTMLTextAreaElement>("#tailor-resume-section")!;
+const tailoringEvidence = document.querySelector<HTMLTextAreaElement>("#tailor-evidence")!;
+const candidateInsights = document.querySelector<HTMLElement>("#candidate-insights")!;
+const candidateProfile = document.querySelector<HTMLElement>("#candidate-profile")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
 let currentJob: CurrentJob = emptyCurrentJob;
 let candidateVault: CandidateVault = emptyCandidateVault;
 let pendingCloudRequest: CloudTailoringRequest | undefined;
+let localTailoringPlan: (LocalTailoringPlan & { resumeId: string; jobSourceUrl: string }) | undefined;
 const resumeStorageKey = "localResumes";
 const vaultStorageKey = "candidateVault";
 const jobStorageKey = "currentJob";
+const tailoringPlanStorageKey = "localTailoringPlan";
 
 function setState(source: "ON_DEVICE" | "IN_CLOUD" | "UNAVAILABLE" | "ERROR", message: string) {
   badge.textContent = source.replace("_", " ");
@@ -154,6 +165,22 @@ function showCurrentJob() {
   showResumeStatus();
 }
 
+function showLocalTailoringPlan() {
+  const appliesToCurrentJob = localTailoringPlan && localTailoringPlan.jobSourceUrl === currentJob.sourceUrl;
+  candidateInsights.hidden = !appliesToCurrentJob;
+  if (!appliesToCurrentJob || !localTailoringPlan) return;
+  candidateProfile.textContent = `${localTailoringPlan.professionalProfile}\n\nSkills: ${localTailoringPlan.skills.join(", ")}\n\nWhy this section: ${localTailoringPlan.reason}`;
+  tailoringJobRequirements.value = localTailoringPlan.jobRequirement;
+  tailoringResumeSection.value = localTailoringPlan.sectionText;
+  tailoringEvidence.value = localTailoringPlan.verifiedEvidence;
+}
+
+async function clearLocalTailoringPlan() {
+  localTailoringPlan = undefined;
+  candidateInsights.hidden = true;
+  await chrome.storage.local.remove(tailoringPlanStorageKey);
+}
+
 async function loadCurrentJob() {
   currentJob = normalizeCurrentJob((await chrome.storage.local.get(jobStorageKey))[jobStorageKey]);
   showCurrentJob();
@@ -169,6 +196,23 @@ async function loadLocalResumes() {
   showResumeStatus();
 }
 
+async function loadLocalTailoringPlan() {
+  const stored = (await chrome.storage.local.get(tailoringPlanStorageKey))[tailoringPlanStorageKey];
+  const source = stored && typeof stored === "object" ? stored as Record<string, unknown> : {};
+  localTailoringPlan =
+    typeof source.professionalProfile === "string" &&
+    Array.isArray(source.skills) && source.skills.every((skill) => typeof skill === "string") &&
+    typeof source.jobRequirement === "string" &&
+    typeof source.sectionText === "string" &&
+    typeof source.verifiedEvidence === "string" &&
+    typeof source.reason === "string" &&
+    typeof source.resumeId === "string" &&
+    typeof source.jobSourceUrl === "string"
+      ? source as LocalTailoringPlan & { resumeId: string; jobSourceUrl: string }
+      : undefined;
+  showLocalTailoringPlan();
+}
+
 async function loadCandidateVault() {
   const stored = (await chrome.storage.local.get(vaultStorageKey))[vaultStorageKey];
   candidateVault = normalizeCandidateVault(stored);
@@ -177,8 +221,9 @@ async function loadCandidateVault() {
     if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.value = value;
   }
   const completed = completedVaultFields(candidateVault);
+  const missing = missingCandidateVaultFields(candidateVault);
   vaultStatus.textContent = completed
-    ? `${completed} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`
+    ? `${completed} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.${missing.length ? ` Still needed: ${missing.join(", ")}.` : " Profile complete."}`
     : "No candidate details saved yet.";
 }
 
@@ -186,7 +231,8 @@ vaultForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   candidateVault = normalizeCandidateVault(Object.fromEntries(new FormData(vaultForm)));
   await chrome.storage.local.set({ [vaultStorageKey]: candidateVault });
-  vaultStatus.textContent = `${completedVaultFields(candidateVault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`;
+  const missing = missingCandidateVaultFields(candidateVault);
+  vaultStatus.textContent = `${completedVaultFields(candidateVault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.${missing.length ? ` Still needed: ${missing.join(", ")}.` : " Profile complete."}`;
 });
 
 readJobButton.addEventListener("click", async () => {
@@ -197,6 +243,7 @@ readJobButton.addEventListener("click", async () => {
     if (!response.ok) throw new Error(response.error || "The job page could not be read.");
     currentJob = normalizeCurrentJob(response.job);
     if (!currentJob.description) throw new Error("No readable job description was found on this page.");
+    await clearLocalTailoringPlan();
     await chrome.storage.local.set({ [jobStorageKey]: currentJob });
     showCurrentJob();
   } catch (error) {
@@ -213,6 +260,7 @@ currentJobForm.addEventListener("submit", async (event) => {
     jobStatus.textContent = "Add a job description before saving.";
     return;
   }
+  await clearLocalTailoringPlan();
   await chrome.storage.local.set({ [jobStorageKey]: currentJob });
   showCurrentJob();
 });
@@ -226,6 +274,7 @@ resumeFiles.addEventListener("change", async () => {
   }
   try {
     localResumes = mergeResumes(localResumes, await Promise.all(files.map(parseDocxFile)));
+    await clearLocalTailoringPlan();
     await chrome.storage.local.set({ [resumeStorageKey]: localResumes });
     showResumeStatus();
   } catch (error) {
@@ -241,6 +290,7 @@ localButton.addEventListener("click", async () => {
   setState("ON_DEVICE", "Preparing the on-device model…");
   try {
     const resumes = localResumes.length ? localResumes : fictionalResumes;
+    const jobDescription = currentJob.description ? currentJobPrompt(currentJob) : fictionalJob;
     const model = getGenerativeModel(ai, {
       mode: InferenceMode.ONLY_ON_DEVICE,
       onDeviceParams: {
@@ -257,7 +307,6 @@ localButton.addEventListener("click", async () => {
     const scores = [];
     for (const [index, resume] of resumes.entries()) {
       result.textContent = `Scoring local résumé ${index + 1} of ${resumes.length}: ${resume.label}`;
-      const jobDescription = currentJob.description ? currentJobPrompt(currentJob) : fictionalJob;
       const response = await model.generateContent(buildLocalPrompt(jobDescription, [resume]));
       if (response.response.inferenceSource !== InferenceSource.ON_DEVICE) {
         throw new Error("A résumé score did not run on-device.");
@@ -265,9 +314,33 @@ localButton.addEventListener("click", async () => {
       scores.push(parseMatchResult(response.response.text(), [resume.id]));
     }
     const parsed = pickBestMatch(scores);
+    const bestResume = resumes.find((resume) => resume.id === parsed.recommendedResumeId)!;
+    result.textContent = `Preparing the matching résumé section locally: ${bestResume.label}`;
+    const tailoringModel = getGenerativeModel(ai, {
+      mode: InferenceMode.ONLY_ON_DEVICE,
+      onDeviceParams: {
+        createOptions: {
+          expectedInputs: [{ type: "text", languages: ["en"] }],
+          expectedOutputs: [{ type: "text", languages: ["en"] }]
+        },
+        promptOptions: { responseConstraint: tailoringPlanSchema }
+      }
+    });
+    await tailoringModel.initializeDeviceModel();
+    const tailoringResponse = await tailoringModel.generateContent(buildLocalTailoringPlanPrompt(jobDescription, bestResume));
+    if (tailoringResponse.response.inferenceSource !== InferenceSource.ON_DEVICE) {
+      throw new Error("The tailoring plan did not run on-device.");
+    }
+    localTailoringPlan = {
+      ...parseLocalTailoringPlan(tailoringResponse.response.text(), jobDescription, bestResume),
+      resumeId: bestResume.id,
+      jobSourceUrl: currentJob.sourceUrl
+    };
+    await chrome.storage.local.set({ [tailoringPlanStorageKey]: localTailoringPlan });
+    showLocalTailoringPlan();
     setState(
       "ON_DEVICE",
-      `${parsed.score}/100 · ${parsed.reason}\n\nRecommended: ${parsed.recommendedResumeId}\nMissing: ${parsed.missingRequirements.join(", ") || "None"}`
+      `${parsed.score}/100 · ${parsed.reason}\n\nRecommended: ${bestResume.label}\nMissing: ${parsed.missingRequirements.join(", ") || "None"}\n\nThe matching section and evidence were prepared locally for your review.`
     );
   } catch (error) {
     setState(
@@ -293,15 +366,7 @@ cloudForm.addEventListener("submit", async (event) => {
   try {
     candidateVault = normalizeCandidateVault((await chrome.storage.local.get(vaultStorageKey))[vaultStorageKey]);
     pendingCloudRequest = normalizeCloudTailoringRequest(Object.fromEntries(new FormData(cloudForm)));
-    const knownPrivateValues = [
-      candidateVault.fullName,
-      candidateVault.email,
-      candidateVault.phone,
-      candidateVault.streetAddress,
-      candidateVault.postalCode,
-      candidateVault.workAuthorization,
-      candidateVault.clearance
-    ];
+    const knownPrivateValues = Object.values(candidateVault);
     if (cloudRequestContainsKnownPrivateValue(pendingCloudRequest, knownPrivateValues)) {
       throw new Error("Remove candidate identity, contact, authorization, and clearance details before cloud review.");
     }
@@ -357,9 +422,12 @@ consentDialog.addEventListener("close", async () => {
   }
 });
 
-initializeFirebase();
-loadCurrentJob();
-loadLocalResumes();
-loadCandidateVault();
-refreshNanoStatus();
+async function initializePanel() {
+  initializeFirebase();
+  await Promise.all([loadCurrentJob(), loadLocalResumes(), loadCandidateVault()]);
+  await loadLocalTailoringPlan();
+  await refreshNanoStatus();
+}
+
+void initializePanel();
 

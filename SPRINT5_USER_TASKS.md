@@ -2,9 +2,9 @@
 
 These actions are separate from implementation and can be completed after the build is ready.
 
-1. Choose one real résumé section that needs improvement; do not paste the full résumé.
-2. Confirm the relevant job requirements and enter only verified evidence that supports the rewrite.
-3. Review the exact cloud payload and approve it only if it contains no identity or demographic information.
-4. Compare the proposed rewrite with the original and reject any invented claim.
+1. Complete any remaining local-only questions shown by Candidate Vault; your phone is already provided.
+2. Review what the on-device model learned from the selected résumé and correct anything inaccurate.
+3. Parked: approve a real minimized cloud request when you are ready.
+4. Parked: compare the proposed rewrite with the original and reject any invented claim.
 
 The extension will not overwrite the original résumé during this sprint.

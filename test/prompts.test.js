@@ -2,12 +2,98 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   buildCloudPrompt,
+  buildLocalTailoringPlanPrompt,
   cloudRequestContainsKnownPrivateValue,
   normalizeCloudTailoringRequest,
   pickBestMatch,
+  parseLocalTailoringPlan,
   parseMatchResult,
   parseResumePatch
 } from "../dist-test/prompts.js";
+
+test("local tailoring plan must use exact job and resume excerpts", () => {
+  const resume = {
+    id: "business",
+    label: "Business",
+    professionalText: "Mapped current-state processes and led executive workshops."
+  };
+  const job = "Lead process transformation and executive workshops.";
+  assert.match(buildLocalTailoringPlanPrompt(job, resume), /exact excerpts/);
+  assert.equal(parseLocalTailoringPlan(JSON.stringify({
+    professionalProfile: "Business process leader",
+    skills: ["Process mapping"],
+    jobRequirement: "executive workshops",
+    sectionText: "Mapped current-state processes",
+    verifiedEvidence: "led executive workshops",
+    reason: "Direct fit"
+  }), job, resume).jobRequirement, job);
+  assert.throws(() => parseLocalTailoringPlan(JSON.stringify({
+    professionalProfile: "Business process leader",
+    skills: ["Process mapping"],
+    jobRequirement: "executive workshops",
+    sectionText: "Invented cloud architecture",
+    verifiedEvidence: "led executive workshops",
+    reason: "No"
+  }), job, resume));
+});
+
+test("local tailoring plan resolves a close model phrase to exact source text", () => {
+  const resume = {
+    id: "business",
+    label: "Business",
+    professionalText: "Mapped current-state processes and led executive discovery workshops."
+  };
+  const job = "Lead process transformation and executive stakeholder workshops.";
+  const plan = parseLocalTailoringPlan(JSON.stringify({
+    professionalProfile: "Business process leader",
+    skills: ["Process mapping"],
+    jobRequirement: "Lead transformation and stakeholder workshops",
+    sectionText: "Mapped processes and led discovery workshops",
+    verifiedEvidence: "Led executive discovery workshops",
+    reason: "Direct fit"
+  }), job, resume);
+  assert.equal(plan.jobRequirement, job);
+  assert.equal(plan.sectionText, resume.professionalText);
+  assert.equal(plan.verifiedEvidence, resume.professionalText);
+});
+
+test("local tailoring plan grounds one useful sentence from a long model response", () => {
+  const resume = {
+    id: "business",
+    label: "Business",
+    professionalText: "Mapped current-state processes and led executive discovery workshops. Built unrelated dashboards."
+  };
+  const job = "Lead process transformation and executive stakeholder workshops. Manage a global roadmap.";
+  const longResponse = "General context about the company and role. Lead transformation through executive stakeholder workshops. More unrelated context.";
+  const plan = parseLocalTailoringPlan(JSON.stringify({
+    professionalProfile: "Business process leader",
+    skills: ["Process mapping"],
+    jobRequirement: longResponse,
+    sectionText: `Background summary. ${resume.professionalText}`,
+    verifiedEvidence: "Evidence: mapped current-state processes and led executive discovery workshops.",
+    reason: "Direct fit"
+  }), job, resume);
+  assert.equal(plan.jobRequirement, "Lead process transformation and executive stakeholder workshops.");
+  assert.equal(plan.sectionText, "Mapped current-state processes and led executive discovery workshops.");
+});
+
+test("local tailoring plan does not send a broken job-page fragment", () => {
+  const resume = {
+    id: "business",
+    label: "Business",
+    professionalText: "Defined modernization roadmaps and target-state architectures for enterprise platforms."
+  };
+  const job = "Help define target operating models and capability designs: what the platform must do,\nwhat stays manual for launch,\nand what is reusable globally.";
+  const plan = parseLocalTailoringPlan(JSON.stringify({
+    professionalProfile: "Business architect",
+    skills: ["Capability design"],
+    jobRequirement: "what stays manual for launch and what is reusable globally",
+    sectionText: resume.professionalText,
+    verifiedEvidence: resume.professionalText,
+    reason: "Direct fit"
+  }), job, resume);
+  assert.equal(plan.jobRequirement, job.replace(/\n+/g, " "));
+});
 
 test("cloud prompt includes only the explicitly supplied professional section", () => {
   const prompt = buildCloudPrompt({

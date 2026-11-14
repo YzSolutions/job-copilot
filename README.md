@@ -1,4 +1,4 @@
-# InDigitual Ventures — Hybrid Job Copilot
+# InDigitual Ventures — Job Copilot
 
 Sprint 1 technical proof for the Google #BuildHybridAI 2026 hackathon. The Chrome extension demonstrates two deliberately separate Firebase AI Logic paths:
 
@@ -12,10 +12,11 @@ The interface reports the inference source and never silently falls back from lo
 - Manifest V3 side-panel extension
 - Fictional job and résumé fixtures
 - Local-only import and storage of up to five DOCX résumés
-- Local candidate vault for reusable identity, address, work-authorization, sponsorship, and clearance answers
+- Local candidate vault that shows the remaining reusable application questions
 - On-demand local extraction and review of the active job page
-- Structured local résumé recommendation
-- Consent-gated cloud rewrite of one user-selected résumé section
+- Structured local résumé recommendation and professional profile
+- Local selection of an exact job requirement, résumé section, and supporting evidence
+- Consent-gated cloud rewrite of only that reviewed professional content
 - Explicit cloud choice when Gemini Nano is unavailable
 - Production and private debug builds
 - Packaged ZIP for judge installation
@@ -43,7 +44,7 @@ Never publish a debug build or commit an App Check debug token. A private judge 
 
 ## Privacy boundary
 
-Imported DOCX résumés, candidate-vault answers, and reviewed job pages remain in the user's Chrome profile. Résumés and reviewed job text are used only by the `ONLY_ON_DEVICE` comparison; vault answers are not included in either AI path. Cloud tailoring receives only the exact job requirements, one résumé section, and verified professional evidence the user reviews and approves. It never receives a full stored résumé or candidate-vault, veteran, disability, demographic, or EEO data. A fictional one-click payload remains available for judge testing.
+Imported DOCX résumés, the locally learned professional profile, candidate-vault answers, and reviewed job pages remain in the user's Chrome profile. The on-device model recommends a résumé and selects exact excerpts for tailoring; it does not silently fall back to cloud AI. Vault answers are not included in either AI path. Cloud tailoring receives only the exact job requirement, one résumé section, and verified professional evidence the user reviews and approves. It never receives a full stored résumé or candidate vault, including phone, address, authorization, veteran, disability, demographic, or EEO data. A fictional one-click payload remains available for judge testing.
 
 ## License
 
