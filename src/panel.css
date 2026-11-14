@@ -44,4 +44,10 @@ dialog::backdrop { background: rgba(5, 20, 15, .62); }
 .privacy-note { padding: 10px; border-radius: 8px; background: #e9f7f0; font-size: 12px; }
 .actions { display: grid; grid-template-columns: 1fr 1.25fr; gap: 8px; margin-top: 14px; }
 .actions .secondary { color: #10231d; background: #e7e2d5; }
+.application-list { display: grid; gap: 10px; margin: 14px 0 0; padding: 0; list-style: none; }
+.application-item { display: grid; gap: 8px; padding: 12px; border: 1px solid #d7d2c3; border-radius: 10px; background: white; }
+.application-item strong, .application-item small { display: block; overflow-wrap: anywhere; }
+.application-item small { margin-top: 2px; color: #4a5c55; }
+.application-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.application-actions button { width: auto; color: #10231d; background: #e7e2d5; }
 

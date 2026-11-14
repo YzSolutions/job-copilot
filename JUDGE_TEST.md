@@ -15,5 +15,6 @@ The public repository and production ZIP do not contain an App Check debug token
 11. Click the extension toolbar icon again after navigating so Chrome grants temporary access to the new page.
 12. Choose **Scan application form**, inspect the exact local preview, and approve it.
 13. Verify supported contact fields are filled, existing and demographic fields remain unchanged, and the form is not submitted.
+14. Choose **Record current job as applied**, change its status, close and reopen the panel, and verify the single local record persists without duplication.
 
 If Gemini Nano is unavailable, the local test must say that nothing was sent to the cloud. The cloud test remains a separate, explicit action.

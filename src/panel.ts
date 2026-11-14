@@ -52,6 +52,13 @@ import {
   normalizeApplicationFields,
   type AutofillEntry
 } from "./autofill.js";
+import {
+  applicationStatuses,
+  normalizeTrackedApplications,
+  recordApplication,
+  updateApplicationStatus,
+  type TrackedApplication
+} from "./tracker.js";
 
 declare const __APP_CHECK_DEBUG__: boolean | string;
 declare global {
@@ -95,6 +102,9 @@ const scanAutofillButton = document.querySelector<HTMLButtonElement>("#scan-auto
 const autofillStatus = document.querySelector<HTMLElement>("#autofill-status")!;
 const autofillDialog = document.querySelector<HTMLDialogElement>("#autofill-consent")!;
 const autofillPreview = document.querySelector<HTMLElement>("#autofill-preview")!;
+const recordApplicationButton = document.querySelector<HTMLButtonElement>("#record-application")!;
+const applicationStatus = document.querySelector<HTMLElement>("#application-status")!;
+const applicationList = document.querySelector<HTMLUListElement>("#application-list")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
@@ -102,11 +112,13 @@ let currentJob: CurrentJob = emptyCurrentJob;
 let candidateVault: CandidateVault = emptyCandidateVault;
 let pendingCloudRequest: CloudTailoringRequest | undefined;
 let pendingAutofillEntries: AutofillEntry[] = [];
+let trackedApplications: TrackedApplication[] = [];
 let localTailoringPlan: (LocalTailoringPlan & { resumeId: string; jobSourceUrl: string }) | undefined;
 const resumeStorageKey = "localResumes";
 const vaultStorageKey = "candidateVault";
 const jobStorageKey = "currentJob";
 const tailoringPlanStorageKey = "localTailoringPlan";
+const applicationsStorageKey = "trackedApplications";
 
 function setState(source: "ON_DEVICE" | "IN_CLOUD" | "UNAVAILABLE" | "ERROR", message: string) {
   badge.textContent = source.replace("_", " ");
@@ -173,6 +185,44 @@ function showCurrentJob() {
     tailoringJobRequirements.value = currentJobPrompt(currentJob).slice(0, 6000);
   }
   showResumeStatus();
+  recordApplicationButton.disabled = !currentJob.title;
+}
+
+function showTrackedApplications() {
+  applicationList.replaceChildren();
+  applicationStatus.textContent = trackedApplications.length
+    ? `${trackedApplications.length} application${trackedApplications.length === 1 ? "" : "s"} stored locally.`
+    : "No applications recorded yet.";
+  for (const application of trackedApplications) {
+    const item = document.createElement("li");
+    item.className = "application-item";
+    const heading = document.createElement("strong");
+    heading.textContent = application.title;
+    const details = document.createElement("small");
+    details.textContent = `${application.company || "Company not recorded"} · ${new Date(application.createdAt).toLocaleDateString()}`;
+    const actions = document.createElement("div");
+    actions.className = "application-actions";
+    const status = document.createElement("select");
+    status.setAttribute("aria-label", `Status for ${application.title}`);
+    for (const value of applicationStatuses) status.add(new Option(value, value, false, value === application.status));
+    status.addEventListener("change", async () => {
+      trackedApplications = updateApplicationStatus(trackedApplications, application.id, status.value, new Date().toISOString());
+      await chrome.storage.local.set({ [applicationsStorageKey]: trackedApplications });
+      showTrackedApplications();
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.setAttribute("aria-label", `Remove ${application.title}`);
+    remove.addEventListener("click", async () => {
+      trackedApplications = trackedApplications.filter((item) => item.id !== application.id);
+      await chrome.storage.local.set({ [applicationsStorageKey]: trackedApplications });
+      showTrackedApplications();
+    });
+    actions.append(status, remove);
+    item.append(heading, details, actions);
+    applicationList.append(item);
+  }
 }
 
 function showLocalTailoringPlan() {
@@ -237,6 +287,11 @@ async function loadCandidateVault() {
     : "No candidate details saved yet.";
 }
 
+async function loadTrackedApplications() {
+  trackedApplications = normalizeTrackedApplications((await chrome.storage.local.get(applicationsStorageKey))[applicationsStorageKey]);
+  showTrackedApplications();
+}
+
 vaultForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   candidateVault = normalizeCandidateVault(Object.fromEntries(new FormData(vaultForm)));
@@ -278,6 +333,17 @@ autofillDialog.addEventListener("close", async () => {
   autofillStatus.textContent = response.ok
     ? `Filled ${response.filled ?? 0} reviewed field${response.filled === 1 ? "" : "s"}. ${response.skipped ?? 0} changed or unsupported field${response.skipped === 1 ? " was" : "s were"} skipped. The application was not submitted.`
     : response.error || "The reviewed fields could not be filled.";
+});
+
+recordApplicationButton.addEventListener("click", async () => {
+  try {
+    trackedApplications = recordApplication(trackedApplications, currentJob, new Date().toISOString());
+    await chrome.storage.local.set({ [applicationsStorageKey]: trackedApplications });
+    showTrackedApplications();
+    applicationStatus.textContent = `${currentJob.title} was recorded locally as applied.`;
+  } catch (error) {
+    applicationStatus.textContent = error instanceof Error ? error.message : "The application could not be recorded.";
+  }
 });
 
 readJobButton.addEventListener("click", async () => {
@@ -469,7 +535,7 @@ consentDialog.addEventListener("close", async () => {
 
 async function initializePanel() {
   initializeFirebase();
-  await Promise.all([loadCurrentJob(), loadLocalResumes(), loadCandidateVault()]);
+  await Promise.all([loadCurrentJob(), loadLocalResumes(), loadCandidateVault(), loadTrackedApplications()]);
   await loadLocalTailoringPlan();
   await refreshNanoStatus();
 }

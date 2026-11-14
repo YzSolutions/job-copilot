@@ -18,11 +18,12 @@ The interface reports the inference source and never silently falls back from lo
 - Local selection of an exact job requirement, résumé section, and supporting evidence
 - Consent-gated cloud rewrite of only that reviewed professional content
 - User-reviewed local autofill that preserves existing answers and never submits
+- Local application tracking with duplicate prevention and outcome updates
 - Explicit cloud choice when Gemini Nano is unavailable
 - Production and private debug builds
 - Packaged ZIP for judge installation
 
-Autofill, tracking and DOCX generation are intentionally deferred to later sprints.
+DOCX generation is intentionally deferred to a later sprint.
 
 ## Build
 
