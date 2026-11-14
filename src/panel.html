@@ -115,6 +115,14 @@
       </section>
 
       <section class="card">
+        <p class="step">APPLICATION · LOCAL ONLY</p>
+        <h2>Review application autofill</h2>
+        <p>Scan visible form fields, review every proposed value, then choose whether to fill them. Existing answers, demographic questions, and the Submit button are never touched.</p>
+        <button id="scan-autofill" type="button">Scan application form</button>
+        <p id="autofill-status" class="file-status" aria-live="polite">No application form scanned yet.</p>
+      </section>
+
+      <section class="card">
         <p class="step">01 · LOCAL</p>
         <h2>Learn your experience and choose the strongest résumé</h2>
         <p id="local-description">Two fictional résumés are compared to a fictional transformation role. No cloud fallback is allowed.</p>
@@ -160,6 +168,19 @@
         <div class="actions">
           <button value="cancel" class="secondary">Keep it local</button>
           <button value="approve">Approve cloud request</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="autofill-consent">
+      <form method="dialog">
+        <p class="step">LOCAL AUTOFILL REVIEW</p>
+        <h2>Fill only these fields?</h2>
+        <pre id="autofill-preview"></pre>
+        <p class="privacy-note">These values stay on this page. Existing answers, demographic and EEO questions, file uploads, checkboxes, and submission controls are excluded.</p>
+        <div class="actions">
+          <button value="cancel" class="secondary">Cancel</button>
+          <button value="approve">Fill reviewed fields</button>
         </div>
       </form>
     </dialog>

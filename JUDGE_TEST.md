@@ -11,5 +11,9 @@ The public repository and production ZIP do not contain an App Check debug token
 7. Choose **Load fictional judge demo**, then **Review exact cloud request**, and inspect the displayed content.
 8. Choose **Keep it local** and verify no cloud result is produced.
 9. Reopen the request, approve it and verify the source badge reads **IN CLOUD** and the original section is unchanged.
+10. Open a harmless test application form with empty first name, last name, email, phone, and demographic fields.
+11. Click the extension toolbar icon again after navigating so Chrome grants temporary access to the new page.
+12. Choose **Scan application form**, inspect the exact local preview, and approve it.
+13. Verify supported contact fields are filled, existing and demographic fields remain unchanged, and the form is not submitted.
 
 If Gemini Nano is unavailable, the local test must say that nothing was sent to the cloud. The cloud test remains a separate, explicit action.

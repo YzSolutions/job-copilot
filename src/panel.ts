@@ -47,6 +47,11 @@ import {
   normalizeCurrentJob,
   type CurrentJob
 } from "./job.js";
+import {
+  buildAutofillPlan,
+  normalizeApplicationFields,
+  type AutofillEntry
+} from "./autofill.js";
 
 declare const __APP_CHECK_DEBUG__: boolean | string;
 declare global {
@@ -86,12 +91,17 @@ const tailoringResumeSection = document.querySelector<HTMLTextAreaElement>("#tai
 const tailoringEvidence = document.querySelector<HTMLTextAreaElement>("#tailor-evidence")!;
 const candidateInsights = document.querySelector<HTMLElement>("#candidate-insights")!;
 const candidateProfile = document.querySelector<HTMLElement>("#candidate-profile")!;
+const scanAutofillButton = document.querySelector<HTMLButtonElement>("#scan-autofill")!;
+const autofillStatus = document.querySelector<HTMLElement>("#autofill-status")!;
+const autofillDialog = document.querySelector<HTMLDialogElement>("#autofill-consent")!;
+const autofillPreview = document.querySelector<HTMLElement>("#autofill-preview")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
 let currentJob: CurrentJob = emptyCurrentJob;
 let candidateVault: CandidateVault = emptyCandidateVault;
 let pendingCloudRequest: CloudTailoringRequest | undefined;
+let pendingAutofillEntries: AutofillEntry[] = [];
 let localTailoringPlan: (LocalTailoringPlan & { resumeId: string; jobSourceUrl: string }) | undefined;
 const resumeStorageKey = "localResumes";
 const vaultStorageKey = "candidateVault";
@@ -233,6 +243,41 @@ vaultForm.addEventListener("submit", async (event) => {
   await chrome.storage.local.set({ [vaultStorageKey]: candidateVault });
   const missing = missingCandidateVaultFields(candidateVault);
   vaultStatus.textContent = `${completedVaultFields(candidateVault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.${missing.length ? ` Still needed: ${missing.join(", ")}.` : " Profile complete."}`;
+});
+
+scanAutofillButton.addEventListener("click", async () => {
+  scanAutofillButton.disabled = true;
+  autofillStatus.textContent = "Scanning visible application fields…";
+  try {
+    candidateVault = normalizeCandidateVault((await chrome.storage.local.get(vaultStorageKey))[vaultStorageKey]);
+    const response = await chrome.runtime.sendMessage({ type: "SCAN_APPLICATION_FORM" }) as { ok?: boolean; fields?: unknown; error?: string };
+    if (!response.ok) throw new Error(response.error || "The application form could not be scanned.");
+    pendingAutofillEntries = buildAutofillPlan(normalizeApplicationFields(response.fields), candidateVault);
+    if (!pendingAutofillEntries.length) throw new Error("No empty, supported application fields matched your saved local details.");
+    autofillPreview.textContent = pendingAutofillEntries.map((entry) => `${entry.label.replace(/:\s*$/, "")}: ${entry.value}`).join("\n\n");
+    autofillStatus.textContent = `${pendingAutofillEntries.length} field${pendingAutofillEntries.length === 1 ? "" : "s"} ready for review. Nothing has been filled yet.`;
+    autofillDialog.showModal();
+  } catch (error) {
+    pendingAutofillEntries = [];
+    autofillStatus.textContent = error instanceof Error ? error.message : "The application form could not be scanned.";
+  } finally {
+    scanAutofillButton.disabled = false;
+  }
+});
+
+autofillDialog.addEventListener("close", async () => {
+  if (autofillDialog.returnValue !== "approve" || !pendingAutofillEntries.length) {
+    pendingAutofillEntries = [];
+    autofillStatus.textContent = "Autofill cancelled. The page was not changed.";
+    return;
+  }
+  const entries = pendingAutofillEntries;
+  pendingAutofillEntries = [];
+  autofillStatus.textContent = "Filling the reviewed fields locally…";
+  const response = await chrome.runtime.sendMessage({ type: "APPLY_APPLICATION_FORM", entries }) as { ok?: boolean; filled?: number; skipped?: number; error?: string };
+  autofillStatus.textContent = response.ok
+    ? `Filled ${response.filled ?? 0} reviewed field${response.filled === 1 ? "" : "s"}. ${response.skipped ?? 0} changed or unsupported field${response.skipped === 1 ? " was" : "s were"} skipped. The application was not submitted.`
+    : response.error || "The reviewed fields could not be filled.";
 });
 
 readJobButton.addEventListener("click", async () => {

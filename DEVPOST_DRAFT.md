@@ -12,9 +12,9 @@ Job seekers repeatedly share the same sensitive information across application s
 
 ### What it does
 
-Job Copilot is a Chrome side-panel extension built around two explicit AI paths. It reads a user-reviewed job page and compares up to five locally stored résumé variants with Gemini Nano on-device, labeling the verified result `ON DEVICE`. When stronger cloud reasoning is useful, the user supplies only relevant job requirements, one résumé section, and verified evidence. The extension shows that exact payload before consent. Only after approval does Firebase AI Logic rewrite the selected section and label the result `IN CLOUD`. The extension never silently falls back from local AI to cloud AI.
+Job Copilot is a Chrome side-panel extension built around two explicit AI paths. It reads a user-reviewed job page and compares up to five locally stored résumé variants with Gemini Nano on-device, labeling the verified result `ON DEVICE`. It can also scan visible application fields, preview local candidate-vault matches, and fill only after approval without overwriting answers or submitting. When stronger cloud reasoning is useful, the user supplies only relevant job requirements, one résumé section, and verified evidence. The extension shows that exact payload before consent. Only after approval does Firebase AI Logic rewrite the selected section and label the result `IN CLOUD`. The extension never silently falls back from local AI to cloud AI.
 
-The hackathon MVP makes the privacy boundary visible before adding user-reviewed application autofill, tracking, and document generation in later sprints.
+The hackathon MVP makes the privacy boundary visible across résumé matching, application autofill, and selective cloud tailoring.
 
 ### How we built it
 
@@ -31,6 +31,7 @@ The largest challenge is App Check inside a packaged Manifest V3 extension. The 
 - Enforced Firebase App Check and verified the registered debug-token exchange.
 - Made the inference source and minimized cloud payload visible in the interface.
 - Kept identity, contact, citizenship, sponsorship, clearance, veteran, disability, demographic, and EEO data out of the cloud request.
+- Added user-reviewed local autofill that excludes demographic and EEO questions, preserves existing answers, and never submits.
 - Added automated validation for prompt privacy, response binding, unknown résumé rejection, and fractional score normalization.
 
 ### What we learned
@@ -39,7 +40,7 @@ Hybrid AI is most valuable when users can understand and control the boundary, n
 
 ### What's next
 
-Next we will add user-reviewed autofill, an application tracker, document generation, and a first-run cloud option for computers without Gemini Nano. We will keep identity and demographic answers local by default and continue sending only the smallest approved professional payload to cloud AI.
+Next we will add an application tracker, document generation, and a first-run cloud option for computers without Gemini Nano. We will keep identity and demographic answers local by default and continue sending only the smallest approved professional payload to cloud AI.
 
 ## Built with
 
