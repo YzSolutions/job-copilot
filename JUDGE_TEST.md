@@ -16,5 +16,6 @@ The public repository and production ZIP do not contain an App Check debug token
 12. Choose **Scan application form**, inspect the exact local preview, and approve it.
 13. Verify supported contact fields are filled, existing and demographic fields remain unchanged, and the form is not submitted.
 14. Choose **Record current job as applied**, change its status, close and reopen the panel, and verify the single local record persists without duplication.
+15. After an approved non-fictional rewrite, choose **Download tailored DOCX** and verify a new local copy is downloaded while the original file remains unchanged. Re-import the selected résumé once if this build predates local source-file storage.
 
 If Gemini Nano is unavailable, the local test must say that nothing was sent to the cloud. The cloud test remains a separate, explicit action.

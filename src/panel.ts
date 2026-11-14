@@ -25,14 +25,17 @@ import {
   pickBestMatch,
   tailoringPlanSchema,
   type CloudTailoringRequest,
-  type LocalTailoringPlan
+  type LocalTailoringPlan,
+  type ResumePatch
 } from "./prompts.js";
 import {
   firebaseConfig,
   hasFirebaseConfig,
   recaptchaEnterpriseSiteKey
 } from "./firebase-config.js";
-import { mergeResumes, parseDocxFile } from "./docx.js";
+import { createTailoredDocx, mergeResumes, parseDocxBytes, tailoredResumeFileName } from "./docx.js";
+import { loadResumeFile, saveResumeFile } from "./resume-store.js";
+import { cloudChoiceMessage, needsCloudChoice } from "./nano.js";
 import type { Resume } from "./prompts.js";
 import {
   completedVaultFields,
@@ -54,6 +57,7 @@ import {
 } from "./autofill.js";
 import {
   applicationStatuses,
+  attachApplicationResume,
   normalizeTrackedApplications,
   recordApplication,
   updateApplicationStatus,
@@ -82,6 +86,7 @@ const badge = document.querySelector<HTMLElement>("#source-badge")!;
 const setupMessage = document.querySelector<HTMLElement>("#setup-message")!;
 const nanoStatus = document.querySelector<HTMLElement>("#nano-status")!;
 const routeMessage = document.querySelector<HTMLElement>("#route-message")!;
+const cloudFallbackButton = document.querySelector<HTMLButtonElement>("#cloud-fallback")!;
 const resumeFiles = document.querySelector<HTMLInputElement>("#resume-files")!;
 const resumeStatus = document.querySelector<HTMLElement>("#resume-status")!;
 const localDescription = document.querySelector<HTMLElement>("#local-description")!;
@@ -105,20 +110,25 @@ const autofillPreview = document.querySelector<HTMLElement>("#autofill-preview")
 const recordApplicationButton = document.querySelector<HTMLButtonElement>("#record-application")!;
 const applicationStatus = document.querySelector<HTMLElement>("#application-status")!;
 const applicationList = document.querySelector<HTMLUListElement>("#application-list")!;
+const downloadResumeButton = document.querySelector<HTMLButtonElement>("#download-resume")!;
+const exportStatus = document.querySelector<HTMLElement>("#export-status")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
 let currentJob: CurrentJob = emptyCurrentJob;
 let candidateVault: CandidateVault = emptyCandidateVault;
 let pendingCloudRequest: CloudTailoringRequest | undefined;
+let pendingCloudResumeId: string | undefined;
 let pendingAutofillEntries: AutofillEntry[] = [];
 let trackedApplications: TrackedApplication[] = [];
 let localTailoringPlan: (LocalTailoringPlan & { resumeId: string; jobSourceUrl: string }) | undefined;
+let approvedResumePatch: (ResumePatch & { resumeId: string; jobSourceUrl: string; exportedFileName?: string }) | undefined;
 const resumeStorageKey = "localResumes";
 const vaultStorageKey = "candidateVault";
 const jobStorageKey = "currentJob";
 const tailoringPlanStorageKey = "localTailoringPlan";
 const applicationsStorageKey = "trackedApplications";
+const approvedPatchStorageKey = "approvedResumePatch";
 
 function setState(source: "ON_DEVICE" | "IN_CLOUD" | "UNAVAILABLE" | "ERROR", message: string) {
   badge.textContent = source.replace("_", " ");
@@ -156,11 +166,17 @@ async function refreshNanoStatus() {
     availability = "unavailable";
   }
   nanoStatus.textContent = availability;
-  routeMessage.hidden = !["unsupported", "unavailable"].includes(availability);
+  routeMessage.hidden = !needsCloudChoice(availability);
+  cloudFallbackButton.hidden = routeMessage.hidden;
   routeMessage.textContent = routeMessage.hidden
     ? ""
-    : "On-device AI is unavailable. Nothing was sent. You may separately prepare, review, and approve a cloud request below.";
+    : cloudChoiceMessage;
 }
+
+cloudFallbackButton.addEventListener("click", () => {
+  document.querySelector(".card.cloud")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  tailoringJobRequirements.focus();
+});
 
 function showResumeStatus() {
   resumeStatus.textContent = localResumes.length
@@ -199,7 +215,10 @@ function showTrackedApplications() {
     const heading = document.createElement("strong");
     heading.textContent = application.title;
     const details = document.createElement("small");
-    details.textContent = `${application.company || "Company not recorded"} · ${new Date(application.createdAt).toLocaleDateString()}`;
+    details.textContent = [
+      `${application.company || "Company not recorded"} · ${new Date(application.createdAt).toLocaleDateString()}`,
+      application.resumeFileName ? `Résumé: ${application.resumeFileName}` : ""
+    ].filter(Boolean).join("\n");
     const actions = document.createElement("div");
     actions.className = "application-actions";
     const status = document.createElement("select");
@@ -235,10 +254,33 @@ function showLocalTailoringPlan() {
   tailoringEvidence.value = localTailoringPlan.verifiedEvidence;
 }
 
+async function refreshExportAvailability() {
+  const appliesToCurrentJob = approvedResumePatch && approvedResumePatch.jobSourceUrl === currentJob.sourceUrl;
+  if (!appliesToCurrentJob || !approvedResumePatch) {
+    downloadResumeButton.disabled = true;
+    exportStatus.textContent = "Complete an approved rewrite to prepare a tailored file.";
+    return;
+  }
+  const source = await loadResumeFile(approvedResumePatch.resumeId).catch(() => undefined);
+  downloadResumeButton.disabled = !source;
+  exportStatus.textContent = source
+    ? approvedResumePatch.exportedFileName
+      ? `Ready. Last downloaded as ${approvedResumePatch.exportedFileName}.`
+      : "Approved rewrite and original DOCX are ready locally."
+    : "Re-import the selected DOCX once so its original formatting can be used. No file was sent anywhere.";
+}
+
+async function clearApprovedResumePatch() {
+  approvedResumePatch = undefined;
+  await chrome.storage.local.remove(approvedPatchStorageKey);
+  await refreshExportAvailability();
+}
+
 async function clearLocalTailoringPlan() {
   localTailoringPlan = undefined;
   candidateInsights.hidden = true;
   await chrome.storage.local.remove(tailoringPlanStorageKey);
+  await clearApprovedResumePatch();
 }
 
 async function loadCurrentJob() {
@@ -271,6 +313,22 @@ async function loadLocalTailoringPlan() {
       ? source as LocalTailoringPlan & { resumeId: string; jobSourceUrl: string }
       : undefined;
   showLocalTailoringPlan();
+}
+
+async function loadApprovedResumePatch() {
+  const stored = (await chrome.storage.local.get(approvedPatchStorageKey))[approvedPatchStorageKey];
+  const source = stored && typeof stored === "object" ? stored as Record<string, unknown> : {};
+  approvedResumePatch =
+    source.sectionId === "selected-section" &&
+    typeof source.originalText === "string" &&
+    typeof source.proposedText === "string" &&
+    typeof source.reason === "string" &&
+    typeof source.resumeId === "string" &&
+    typeof source.jobSourceUrl === "string" &&
+    (source.exportedFileName === undefined || typeof source.exportedFileName === "string")
+      ? source as ResumePatch & { resumeId: string; jobSourceUrl: string; exportedFileName?: string }
+      : undefined;
+  await refreshExportAvailability();
 }
 
 async function loadCandidateVault() {
@@ -338,6 +396,9 @@ autofillDialog.addEventListener("close", async () => {
 recordApplicationButton.addEventListener("click", async () => {
   try {
     trackedApplications = recordApplication(trackedApplications, currentJob, new Date().toISOString());
+    if (approvedResumePatch?.jobSourceUrl === currentJob.sourceUrl && approvedResumePatch.exportedFileName) {
+      trackedApplications = attachApplicationResume(trackedApplications, currentJob, approvedResumePatch.exportedFileName, new Date().toISOString());
+    }
     await chrome.storage.local.set({ [applicationsStorageKey]: trackedApplications });
     showTrackedApplications();
     applicationStatus.textContent = `${currentJob.title} was recorded locally as applied.`;
@@ -384,10 +445,23 @@ resumeFiles.addEventListener("change", async () => {
     return;
   }
   try {
-    localResumes = mergeResumes(localResumes, await Promise.all(files.map(parseDocxFile)));
-    await clearLocalTailoringPlan();
+    const parsedFiles = await Promise.all(files.map(async (file) => {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const resume = parseDocxBytes(bytes, file.name);
+      return { resume, fileName: file.name, bytes };
+    }));
+    const imported = parsedFiles.map(({ resume }) => resume);
+    const merged = mergeResumes(localResumes, imported);
+    const selectedChanged = localTailoringPlan && imported.some((resume) =>
+      resume.id === localTailoringPlan?.resumeId &&
+      localResumes.find((stored) => stored.id === resume.id)?.professionalText !== resume.professionalText
+    );
+    await Promise.all(parsedFiles.map(({ resume, fileName, bytes }) => saveResumeFile(resume.id, fileName, bytes)));
+    localResumes = merged;
+    if (selectedChanged) await clearLocalTailoringPlan();
     await chrome.storage.local.set({ [resumeStorageKey]: localResumes });
     showResumeStatus();
+    await refreshExportAvailability();
   } catch (error) {
     resumeStatus.textContent = error instanceof Error ? error.message : "The résumés could not be loaded.";
   } finally {
@@ -447,6 +521,7 @@ localButton.addEventListener("click", async () => {
       resumeId: bestResume.id,
       jobSourceUrl: currentJob.sourceUrl
     };
+    await clearApprovedResumePatch();
     await chrome.storage.local.set({ [tailoringPlanStorageKey]: localTailoringPlan });
     showLocalTailoringPlan();
     setState(
@@ -481,7 +556,13 @@ cloudForm.addEventListener("submit", async (event) => {
     if (cloudRequestContainsKnownPrivateValue(pendingCloudRequest, knownPrivateValues)) {
       throw new Error("Remove candidate identity, contact, authorization, and clearance details before cloud review.");
     }
+    const plannedResume = localResumes.find((resume) =>
+      resume.id === localTailoringPlan?.resumeId && resume.professionalText.includes(pendingCloudRequest!.sectionText)
+    );
+    const matchingResumes = localResumes.filter((resume) => resume.professionalText.includes(pendingCloudRequest!.sectionText));
+    pendingCloudResumeId = plannedResume?.id ?? (matchingResumes.length === 1 ? matchingResumes[0].id : undefined);
   } catch (error) {
+    pendingCloudResumeId = undefined;
     cloudStatus.textContent = error instanceof Error ? error.message : "The cloud request is incomplete.";
     return;
   }
@@ -496,14 +577,18 @@ cloudForm.addEventListener("submit", async (event) => {
 consentDialog.addEventListener("close", async () => {
   if (consentDialog.returnValue !== "approve" || !ai || !pendingCloudRequest) {
     pendingCloudRequest = undefined;
+    pendingCloudResumeId = undefined;
     cloudStatus.textContent = "Kept local. No professional content was sent.";
     return;
   }
   const request = pendingCloudRequest;
+  const resumeId = pendingCloudResumeId;
   pendingCloudRequest = undefined;
+  pendingCloudResumeId = undefined;
   cloudButton.disabled = true;
   cloudStatus.textContent = "Sending only the approved professional content…";
   setState("IN_CLOUD", "Sending only the displayed résumé section and verified evidence…");
+  await clearApprovedResumePatch();
   try {
     const model = getGenerativeModel(ai, {
       mode: InferenceMode.ONLY_IN_CLOUD,
@@ -520,11 +605,20 @@ consentDialog.addEventListener("close", async () => {
     if (response.response.inferenceSource !== InferenceSource.IN_CLOUD) {
       throw new Error("The approved request did not use the cloud model.");
     }
+    if (resumeId) {
+      approvedResumePatch = { ...parsed, resumeId, jobSourceUrl: currentJob.sourceUrl };
+      await chrome.storage.local.set({ [approvedPatchStorageKey]: approvedResumePatch });
+      await refreshExportAvailability();
+    } else {
+      await clearApprovedResumePatch();
+    }
     setState(
       "IN_CLOUD",
       `${parsed.originalText}\n\n→ ${parsed.proposedText}\n\nWhy: ${parsed.reason}`
     );
-    cloudStatus.textContent = "Cloud rewrite complete. The original local résumé was not changed.";
+    cloudStatus.textContent = resumeId
+      ? "Cloud rewrite complete. The original local résumé was not changed; a local DOCX copy is ready below."
+      : "Cloud rewrite complete. This demo section was not linked to a stored résumé, so no DOCX was created.";
   } catch (error) {
     setState("ERROR", error instanceof Error ? error.message : "Cloud AI failed.");
     cloudStatus.textContent = "Cloud rewrite failed. The original local résumé was not changed.";
@@ -533,10 +627,42 @@ consentDialog.addEventListener("close", async () => {
   }
 });
 
+downloadResumeButton.addEventListener("click", async () => {
+  if (!approvedResumePatch || approvedResumePatch.jobSourceUrl !== currentJob.sourceUrl) return;
+  downloadResumeButton.disabled = true;
+  exportStatus.textContent = "Creating a local DOCX copy…";
+  try {
+    const source = await loadResumeFile(approvedResumePatch.resumeId);
+    if (!source) throw new Error("Re-import the selected DOCX before downloading a tailored copy.");
+    const resume = localResumes.find((item) => item.id === approvedResumePatch!.resumeId);
+    if (!resume) throw new Error("The selected local résumé is no longer available.");
+    const bytes = createTailoredDocx(source.bytes, source.fileName, approvedResumePatch.originalText, approvedResumePatch.proposedText);
+    const fileName = tailoredResumeFileName(resume.label, currentJob.company, currentJob.title);
+    const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+    const url = URL.createObjectURL(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    approvedResumePatch = { ...approvedResumePatch, exportedFileName: fileName };
+    await chrome.storage.local.set({ [approvedPatchStorageKey]: approvedResumePatch });
+    trackedApplications = attachApplicationResume(trackedApplications, currentJob, fileName, new Date().toISOString());
+    await chrome.storage.local.set({ [applicationsStorageKey]: trackedApplications });
+    showTrackedApplications();
+    exportStatus.textContent = `Downloaded ${fileName}. The original DOCX was not changed.`;
+  } catch (error) {
+    exportStatus.textContent = error instanceof Error ? error.message : "The tailored DOCX could not be created.";
+  } finally {
+    await refreshExportAvailability();
+  }
+});
+
 async function initializePanel() {
   initializeFirebase();
   await Promise.all([loadCurrentJob(), loadLocalResumes(), loadCandidateVault(), loadTrackedApplications()]);
   await loadLocalTailoringPlan();
+  await loadApprovedResumePatch();
   await refreshNanoStatus();
 }
 

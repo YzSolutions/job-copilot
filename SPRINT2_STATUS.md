@@ -19,4 +19,5 @@
 - [x] Verify the stored résumé count and labels after reopening the side panel.
 - [x] Run an on-device comparison using the five imported résumés.
 - [ ] Verify the unavailable-Nano message and separate cloud-consent path on a judge-like machine without Nano.
+- [x] Verify in automated coverage that unavailable or unsupported Nano exposes a separate cloud choice and states that nothing was sent.
 - [x] Reload the existing unpacked extension in Chrome before the live import test.

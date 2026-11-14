@@ -13,12 +13,13 @@
       <p class="lede">Match résumés locally. Send only an approved section when stronger cloud reasoning is needed.</p>
 
       <section class="status" aria-label="AI status">
-        <span id="source-badge" data-source="UNAVAILABLE">UNAVAILABLE</span>
+        <span id="source-badge" data-source="NOT_RUN">NOT RUN</span>
         <span>Gemini Nano: <strong id="nano-status">checking…</strong></span>
       </section>
 
       <p id="setup-message" class="notice" hidden>Firebase setup is required before inference tests can run.</p>
       <p id="route-message" class="notice" hidden></p>
+      <button id="cloud-fallback" type="button" class="secondary" hidden>Review the separate cloud option</button>
 
       <section class="card">
         <p class="step">CURRENT JOB · LOCAL ONLY</p>
@@ -160,6 +161,14 @@
           <button id="run-cloud" type="submit">Review exact cloud request</button>
         </form>
         <p id="cloud-status" class="file-status" aria-live="polite">No professional content has been sent.</p>
+      </section>
+
+      <section class="card">
+        <p class="step">TAILORED FILE · LOCAL ONLY</p>
+        <h2>Download the approved résumé</h2>
+        <p>The approved rewrite is inserted into a local copy of the selected DOCX. Your original file is never changed.</p>
+        <button id="download-resume" type="button" disabled>Download tailored DOCX</button>
+        <p id="export-status" class="file-status" aria-live="polite">Complete an approved rewrite to prepare a tailored file.</p>
       </section>
 
       <section class="result-card" aria-live="polite">

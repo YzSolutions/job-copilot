@@ -20,7 +20,7 @@
 ## Not yet proven
 
 - Production packaged-extension App Check: Manifest V3 blocks Google's remotely loaded reCAPTCHA script. Development works through a private debug token; the judge-safe production attestation path remains unresolved.
-- Judge fallback on computers without Nano still needs a dedicated first-run screen and test coverage.
+- The dedicated no-Nano cloud-choice control and automated fallback coverage are complete; judge-machine hardware validation remains parked.
 
 ## User tasks parked
 

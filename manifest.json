@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "InDigitual Hybrid Job Copilot",
   "version": "0.1.0",
-  "description": "Match resumes locally, review application autofill, and approve only the sections sent to cloud AI.",
+  "description": "Match resumes locally, review autofill, tailor one approved section, and download a private DOCX copy.",
   "minimum_chrome_version": "139",
   "permissions": ["sidePanel", "storage", "activeTab", "scripting"],
   "action": {

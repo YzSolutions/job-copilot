@@ -23,4 +23,4 @@
 
 - Chrome's privacy-limited `activeTab` access must be granted again by clicking the extension after navigating to a new application page.
 - Standard visible controls inside a normal HTML form work. Custom controls and cross-origin iframe forms still need site-specific adapters.
-- The initial source badge can read **UNAVAILABLE** while the separate Gemini Nano availability text reads **available**; this is accurate state (no inference source yet) but visually confusing and should be clarified before the judge recording.
+- The initial source badge now reads **NOT RUN**, separately from Gemini Nano availability, removing the earlier judge-facing ambiguity.

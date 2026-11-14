@@ -9,6 +9,7 @@ export type TrackedApplication = {
   company: string;
   sourceUrl: string;
   status: ApplicationStatus;
+  resumeFileName?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -33,10 +34,11 @@ export function normalizeTrackedApplications(value: unknown): TrackedApplication
     const sourceUrl = clean(source.sourceUrl, 2000);
     const createdAt = validTimestamp(source.createdAt);
     const updatedAt = validTimestamp(source.updatedAt);
+    const resumeFileName = clean(source.resumeFileName, 200);
     const status = applicationStatuses.includes(source.status as ApplicationStatus) ? source.status as ApplicationStatus : undefined;
     if (!id || !title || !createdAt || !updatedAt || !status || seen.has(id)) return [];
     seen.add(id);
-    return [{ id, title, company, sourceUrl: /^https?:\/\//i.test(sourceUrl) ? sourceUrl : "", status, createdAt, updatedAt }];
+    return [{ id, title, company, sourceUrl: /^https?:\/\//i.test(sourceUrl) ? sourceUrl : "", status, ...(resumeFileName ? { resumeFileName } : {}), createdAt, updatedAt }];
   }).slice(0, 500);
 }
 
@@ -52,10 +54,23 @@ export function recordApplication(applications: TrackedApplication[], jobValue: 
     company: job.company,
     sourceUrl: job.sourceUrl,
     status: existing?.status ?? "Applied",
+    ...(existing?.resumeFileName ? { resumeFileName: existing.resumeFileName } : {}),
     createdAt: existing?.createdAt ?? timestamp,
     updatedAt: timestamp
   };
   return [record, ...applications.filter((application) => application.id !== id)].slice(0, 500);
+}
+
+export function attachApplicationResume(applications: TrackedApplication[], jobValue: CurrentJob, fileName: string, now: string): TrackedApplication[] {
+  const job = normalizeCurrentJob(jobValue);
+  const id = (job.sourceUrl || `${job.title}\n${job.company}`).toLocaleLowerCase().slice(0, 2000);
+  const timestamp = validTimestamp(now);
+  const resumeFileName = clean(fileName, 200);
+  if (!timestamp || !resumeFileName) return applications;
+  return applications.map((application) => application.id === id
+    ? { ...application, resumeFileName, updatedAt: timestamp }
+    : application
+  );
 }
 
 export function updateApplicationStatus(applications: TrackedApplication[], id: string, status: string, now: string): TrackedApplication[] {
