@@ -34,6 +34,8 @@ input[type="file"] { width: 100%; padding: 10px; border: 1px dashed #8c978f; bor
 .file-status { margin: 10px 0 0; color: #4a5c55; font-size: 12px; }
 button { width: 100%; padding: 11px 14px; border: 0; border-radius: 9px; color: white; background: #10231d; font: inherit; font-weight: 750; cursor: pointer; }
 button:hover { background: #1c4939; }
+button.secondary { color: #10231d; background: #e7e2d5; }
+button.secondary:hover { background: #d9d2c2; }
 button:focus-visible { outline: 3px solid #f59f00; outline-offset: 2px; }
 button:disabled { cursor: not-allowed; opacity: .45; }
 pre { margin: 8px 0 0; white-space: pre-wrap; word-break: break-word; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }

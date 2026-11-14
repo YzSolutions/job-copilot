@@ -14,11 +14,14 @@ import { cloudFixture, fictionalJob, fictionalResumes } from "./fixtures.js";
 import {
   buildCloudPrompt,
   buildLocalPrompt,
+  cloudRequestContainsKnownPrivateValue,
   matchSchema,
+  normalizeCloudTailoringRequest,
   parseMatchResult,
   parseResumePatch,
   patchSchema,
-  pickBestMatch
+  pickBestMatch,
+  type CloudTailoringRequest
 } from "./prompts.js";
 import {
   firebaseConfig,
@@ -30,7 +33,8 @@ import type { Resume } from "./prompts.js";
 import {
   completedVaultFields,
   emptyCandidateVault,
-  normalizeCandidateVault
+  normalizeCandidateVault,
+  type CandidateVault
 } from "./vault.js";
 import {
   currentJobPrompt,
@@ -69,10 +73,16 @@ const vaultStatus = document.querySelector<HTMLElement>("#vault-status")!;
 const readJobButton = document.querySelector<HTMLButtonElement>("#read-job")!;
 const currentJobForm = document.querySelector<HTMLFormElement>("#current-job")!;
 const jobStatus = document.querySelector<HTMLElement>("#job-status")!;
+const cloudForm = document.querySelector<HTMLFormElement>("#cloud-tailoring")!;
+const cloudDemoButton = document.querySelector<HTMLButtonElement>("#load-cloud-demo")!;
+const cloudStatus = document.querySelector<HTMLElement>("#cloud-status")!;
+const tailoringJobRequirements = document.querySelector<HTMLTextAreaElement>("#tailor-job-requirements")!;
 
 let ai: ReturnType<typeof getAI> | undefined;
 let localResumes: Resume[] = [];
 let currentJob: CurrentJob = emptyCurrentJob;
+let candidateVault: CandidateVault = emptyCandidateVault;
+let pendingCloudRequest: CloudTailoringRequest | undefined;
 const resumeStorageKey = "localResumes";
 const vaultStorageKey = "candidateVault";
 const jobStorageKey = "currentJob";
@@ -116,7 +126,7 @@ async function refreshNanoStatus() {
   routeMessage.hidden = !["unsupported", "unavailable"].includes(availability);
   routeMessage.textContent = routeMessage.hidden
     ? ""
-    : "On-device AI is unavailable. Nothing was sent. You may separately review and approve the fictional cloud test below.";
+    : "On-device AI is unavailable. Nothing was sent. You may separately prepare, review, and approve a cloud request below.";
 }
 
 function showResumeStatus() {
@@ -138,6 +148,9 @@ function showCurrentJob() {
   jobStatus.textContent = currentJob.description
     ? `Saved locally: ${currentJob.title || "Untitled job"}${currentJob.company ? ` · ${currentJob.company}` : ""}`
     : "No job page saved yet.";
+  if (!tailoringJobRequirements.value && currentJob.description) {
+    tailoringJobRequirements.value = currentJobPrompt(currentJob).slice(0, 6000);
+  }
   showResumeStatus();
 }
 
@@ -158,12 +171,12 @@ async function loadLocalResumes() {
 
 async function loadCandidateVault() {
   const stored = (await chrome.storage.local.get(vaultStorageKey))[vaultStorageKey];
-  const vault = normalizeCandidateVault(stored);
-  for (const [name, value] of Object.entries(vault)) {
+  candidateVault = normalizeCandidateVault(stored);
+  for (const [name, value] of Object.entries(candidateVault)) {
     const field = vaultForm.elements.namedItem(name);
     if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement) field.value = value;
   }
-  const completed = completedVaultFields(vault);
+  const completed = completedVaultFields(candidateVault);
   vaultStatus.textContent = completed
     ? `${completed} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`
     : "No candidate details saved yet.";
@@ -171,9 +184,9 @@ async function loadCandidateVault() {
 
 vaultForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const vault = normalizeCandidateVault(Object.fromEntries(new FormData(vaultForm)));
-  await chrome.storage.local.set({ [vaultStorageKey]: vault });
-  vaultStatus.textContent = `${completedVaultFields(vault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`;
+  candidateVault = normalizeCandidateVault(Object.fromEntries(new FormData(vaultForm)));
+  await chrome.storage.local.set({ [vaultStorageKey]: candidateVault });
+  vaultStatus.textContent = `${completedVaultFields(candidateVault)} of ${Object.keys(emptyCandidateVault).length} reusable fields saved locally.`;
 });
 
 readJobButton.addEventListener("click", async () => {
@@ -267,19 +280,54 @@ localButton.addEventListener("click", async () => {
   }
 });
 
-cloudButton.addEventListener("click", () => {
+cloudDemoButton.addEventListener("click", () => {
+  for (const [name, value] of Object.entries(cloudFixture)) {
+    const field = cloudForm.elements.namedItem(name);
+    if (field instanceof HTMLTextAreaElement) field.value = value;
+  }
+  cloudStatus.textContent = "Fictional professional content loaded. Review it before continuing.";
+});
+
+cloudForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  try {
+    candidateVault = normalizeCandidateVault((await chrome.storage.local.get(vaultStorageKey))[vaultStorageKey]);
+    pendingCloudRequest = normalizeCloudTailoringRequest(Object.fromEntries(new FormData(cloudForm)));
+    const knownPrivateValues = [
+      candidateVault.fullName,
+      candidateVault.email,
+      candidateVault.phone,
+      candidateVault.streetAddress,
+      candidateVault.postalCode,
+      candidateVault.workAuthorization,
+      candidateVault.clearance
+    ];
+    if (cloudRequestContainsKnownPrivateValue(pendingCloudRequest, knownPrivateValues)) {
+      throw new Error("Remove candidate identity, contact, authorization, and clearance details before cloud review.");
+    }
+  } catch (error) {
+    cloudStatus.textContent = error instanceof Error ? error.message : "The cloud request is incomplete.";
+    return;
+  }
   consentPreview.textContent = [
-    `Job requirements: ${cloudFixture.jobRequirements}`,
-    `Resume section: ${cloudFixture.sectionText}`,
-    `Verified evidence: ${cloudFixture.verifiedEvidence}`
+    `Job requirements: ${pendingCloudRequest.jobRequirements}`,
+    `Resume section: ${pendingCloudRequest.sectionText}`,
+    `Verified evidence: ${pendingCloudRequest.verifiedEvidence}`
   ].join("\n\n");
   consentDialog.showModal();
 });
 
 consentDialog.addEventListener("close", async () => {
-  if (consentDialog.returnValue !== "approve" || !ai) return;
+  if (consentDialog.returnValue !== "approve" || !ai || !pendingCloudRequest) {
+    pendingCloudRequest = undefined;
+    cloudStatus.textContent = "Kept local. No professional content was sent.";
+    return;
+  }
+  const request = pendingCloudRequest;
+  pendingCloudRequest = undefined;
   cloudButton.disabled = true;
-  setState("IN_CLOUD", "Sending only the displayed fictional section…");
+  cloudStatus.textContent = "Sending only the approved professional content…";
+  setState("IN_CLOUD", "Sending only the displayed résumé section and verified evidence…");
   try {
     const model = getGenerativeModel(ai, {
       mode: InferenceMode.ONLY_IN_CLOUD,
@@ -291,14 +339,19 @@ consentDialog.addEventListener("close", async () => {
         }
       }
     });
-    const response = await model.generateContent(buildCloudPrompt(cloudFixture));
-    const parsed = parseResumePatch(response.response.text(), cloudFixture.sectionId);
+    const response = await model.generateContent(buildCloudPrompt(request));
+    const parsed = parseResumePatch(response.response.text(), request.sectionId, request.sectionText);
+    if (response.response.inferenceSource !== InferenceSource.IN_CLOUD) {
+      throw new Error("The approved request did not use the cloud model.");
+    }
     setState(
-      response.response.inferenceSource === InferenceSource.IN_CLOUD ? "IN_CLOUD" : "ERROR",
+      "IN_CLOUD",
       `${parsed.originalText}\n\n→ ${parsed.proposedText}\n\nWhy: ${parsed.reason}`
     );
+    cloudStatus.textContent = "Cloud rewrite complete. The original local résumé was not changed.";
   } catch (error) {
     setState("ERROR", error instanceof Error ? error.message : "Cloud AI failed.");
+    cloudStatus.textContent = "Cloud rewrite failed. The original local résumé was not changed.";
   } finally {
     cloudButton.disabled = false;
   }

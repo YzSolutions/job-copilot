@@ -12,9 +12,9 @@ Job seekers repeatedly share the same sensitive information across application s
 
 ### What it does
 
-Job Copilot is a Chrome side-panel extension built around two explicit AI paths. It compares fictional résumé variants to a fictional job description with Gemini Nano on-device and labels the verified result `ON DEVICE`. When stronger cloud reasoning is useful, it first shows the exact job requirements, résumé section, and verified evidence that would leave the computer. Only after approval does Firebase AI Logic rewrite that one section and label the result `IN CLOUD`. The extension never silently falls back from local AI to cloud AI.
+Job Copilot is a Chrome side-panel extension built around two explicit AI paths. It reads a user-reviewed job page and compares up to five locally stored résumé variants with Gemini Nano on-device, labeling the verified result `ON DEVICE`. When stronger cloud reasoning is useful, the user supplies only relevant job requirements, one résumé section, and verified evidence. The extension shows that exact payload before consent. Only after approval does Firebase AI Logic rewrite the selected section and label the result `IN CLOUD`. The extension never silently falls back from local AI to cloud AI.
 
-The hackathon MVP proves the privacy boundary before adding application autofill, real résumé import, tracking, and document generation in later sprints.
+The hackathon MVP makes the privacy boundary visible before adding user-reviewed application autofill, tracking, and document generation in later sprints.
 
 ### How we built it
 
@@ -39,7 +39,7 @@ Hybrid AI is most valuable when users can understand and control the boundary, n
 
 ### What's next
 
-Next we will add encrypted local résumé import, job-page extraction, user-reviewed autofill, an application tracker, and a first-run cloud option for computers without Gemini Nano. We will keep identity and demographic answers local by default and continue sending only the smallest approved professional payload to cloud AI.
+Next we will add user-reviewed autofill, an application tracker, document generation, and a first-run cloud option for computers without Gemini Nano. We will keep identity and demographic answers local by default and continue sending only the smallest approved professional payload to cloud AI.
 
 ## Built with
 
@@ -77,11 +77,11 @@ InDigitual's private Job Agent desktop application existed before November 11, 2
 
 ### Main technology requirement response
 
-Job Copilot uses Firebase AI Logic for both required inference paths in a Manifest V3 Chrome extension. `ONLY_ON_DEVICE` runs résumé matching with Gemini Nano in Chrome and verifies that the returned inference source is `ON_DEVICE`. `ONLY_IN_CLOUD` is a separate user-approved flow that sends only the displayed fictional job requirements, one résumé section, and verified professional evidence to the Gemini Developer API, then verifies the result source is `IN_CLOUD`. Firebase App Check is registered and enforced. The extension never silently falls back from local to cloud AI.
+Job Copilot uses Firebase AI Logic for both required inference paths in a Manifest V3 Chrome extension. `ONLY_ON_DEVICE` runs résumé matching with Gemini Nano in Chrome and verifies that the returned inference source is `ON_DEVICE`. `ONLY_IN_CLOUD` is a separate user-approved flow that sends only the displayed job requirements, one selected résumé section, and verified professional evidence to the Gemini Developer API, then verifies the result source is `IN_CLOUD`. A fictional payload is available for judge testing. Firebase App Check is registered and enforced. The extension never silently falls back from local to cloud AI.
 
 ### Private judge-testing note
 
-Install the organizer-provided private judge build as an unpacked Chrome extension. Confirm Gemini Nano status, run **Analyze on device**, and verify the badge reads **ON DEVICE**. Open **Review cloud request**, inspect the exact minimized fictional payload, choose **Keep it local** once, then reopen and approve it to verify the badge reads **IN CLOUD**. If Gemini Nano is unavailable, the extension must state that nothing was sent to the cloud. The private App Check debug token will be provided only through Devpost testing instructions and is not present in the public repository or production ZIP.
+Install the organizer-provided private judge build as an unpacked Chrome extension. Confirm Gemini Nano status, run **Analyze on device**, and verify the badge reads **ON DEVICE**. Choose **Load fictional judge demo**, open **Review exact cloud request**, inspect the minimized payload, choose **Keep it local** once, then reopen and approve it to verify the badge reads **IN CLOUD**. If Gemini Nano is unavailable, the extension must state that nothing was sent to the cloud. The private App Check debug token will be provided only through Devpost testing instructions and is not present in the public repository or production ZIP.
 
 ## Confirmed attestations
 

@@ -8,8 +8,8 @@ The public repository and production ZIP do not contain an App Check debug token
 4. Pin the extension and click it to open the side panel.
 5. Confirm the Gemini Nano availability status.
 6. Choose **Analyze on device** and verify the source badge reads **ON DEVICE**.
-7. Choose **Review cloud request** and inspect the exact fictional content.
+7. Choose **Load fictional judge demo**, then **Review exact cloud request**, and inspect the displayed content.
 8. Choose **Keep it local** and verify no cloud result is produced.
-9. Reopen the request, approve it and verify the source badge reads **IN CLOUD**.
+9. Reopen the request, approve it and verify the source badge reads **IN CLOUD** and the original section is unchanged.
 
 If Gemini Nano is unavailable, the local test must say that nothing was sent to the cloud. The cloud test remains a separate, explicit action.

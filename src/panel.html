@@ -105,8 +105,21 @@
       <section class="card cloud">
         <p class="step">02 · WITH PERMISSION</p>
         <h2>Improve one section</h2>
-        <p>Preview the exact fictional professional content before approving a cloud request.</p>
-        <button id="run-cloud" type="button">Review fictional cloud request</button>
+        <p>Paste only the section you want improved and the evidence that supports it. Nothing is sent until you review and approve the exact request.</p>
+        <form id="cloud-tailoring">
+          <label for="tailor-job-requirements">Relevant job requirements</label>
+          <textarea id="tailor-job-requirements" name="jobRequirements" rows="5" maxlength="6000" required></textarea>
+
+          <label for="tailor-resume-section">One résumé section to improve</label>
+          <textarea id="tailor-resume-section" name="sectionText" rows="6" maxlength="6000" required></textarea>
+
+          <label for="tailor-evidence">Verified evidence the rewrite may use</label>
+          <textarea id="tailor-evidence" name="verifiedEvidence" rows="4" maxlength="4000" required></textarea>
+
+          <button id="load-cloud-demo" type="button" class="secondary">Load fictional judge demo</button>
+          <button id="run-cloud" type="submit">Review exact cloud request</button>
+        </form>
+        <p id="cloud-status" class="file-status" aria-live="polite">No professional content has been sent.</p>
       </section>
 
       <section class="result-card" aria-live="polite">
@@ -120,7 +133,7 @@
         <p class="step">CLOUD CONSENT</p>
         <h2>Only this content will leave your device</h2>
         <pre id="consent-preview"></pre>
-        <p class="privacy-note">No name, email, phone, address, citizenship, sponsorship, clearance, veteran, disability, demographic or EEO data is included.</p>
+        <p class="privacy-note">Only the displayed job requirements, résumé section, and verified evidence are included. Known candidate-vault identity values are blocked before this screen.</p>
         <div class="actions">
           <button value="cancel" class="secondary">Keep it local</button>
           <button value="approve">Approve cloud request</button>
