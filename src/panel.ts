@@ -7,8 +7,8 @@ import {
   InferenceSource
 } from "firebase/ai";
 import {
+  CustomProvider,
   initializeAppCheck,
-  ReCaptchaEnterpriseProvider
 } from "firebase/app-check";
 import { cloudFixture, fictionalJob, fictionalResumes } from "./fixtures.js";
 import {
@@ -30,8 +30,7 @@ import {
 } from "./prompts.js";
 import {
   firebaseConfig,
-  hasFirebaseConfig,
-  recaptchaEnterpriseSiteKey
+  hasFirebaseConfig
 } from "./firebase-config.js";
 import { createTailoredDocx, mergeResumes, parseDocxBytes, tailoredResumeFileName } from "./docx.js";
 import { loadResumeFile, saveResumeFile } from "./resume-store.js";
@@ -145,11 +144,21 @@ function initializeFirebase() {
   }
 
   const app = initializeApp(firebaseConfig);
-  if (__APP_CHECK_DEBUG__) window.FIREBASE_APPCHECK_DEBUG_TOKEN = __APP_CHECK_DEBUG__;
-  initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider(recaptchaEnterpriseSiteKey),
-    isTokenAutoRefreshEnabled: true
-  });
+  if (__APP_CHECK_DEBUG__) {
+    window.FIREBASE_APPCHECK_DEBUG_TOKEN = __APP_CHECK_DEBUG__;
+    initializeAppCheck(app, {
+      // The debug exchange bypasses this provider; using CustomProvider avoids reCAPTCHA's blocked remote script in Manifest V3.
+      provider: new CustomProvider({ getToken: async () => { throw new Error("App Check debug mode is unavailable."); } }),
+      isTokenAutoRefreshEnabled: true
+    });
+    setupMessage.hidden = false;
+    setupMessage.textContent = "Private judge build: cloud AI is protected by a registered App Check debug token.";
+  } else {
+    cloudButton.disabled = true;
+    setupMessage.hidden = false;
+    setupMessage.textContent = "Public build: on-device features are ready. Cloud tailoring is available only in the private judge build until packaged-extension attestation is supported.";
+    cloudStatus.textContent = "Cloud tailoring is disabled in this public build; no professional content can be sent.";
+  }
   ai = getAI(app, { backend: new GoogleAIBackend() });
 }
 

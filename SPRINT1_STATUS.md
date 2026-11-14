@@ -17,9 +17,9 @@
 - Yahya Zia is registered for `#BuildHybridAI 2026` on Devpost as a solo Web/Chrome entrant. The `Job Copilot` draft is 3/5 steps complete; its overview, eligibility, disclosure, technology explanation, repository, and license details are saved.
 - The source is public at https://github.com/YzSolutions/job-copilot under Apache-2.0.
 
-## Not yet proven
+## Later-sprint resolution
 
-- Production packaged-extension App Check: Manifest V3 blocks Google's remotely loaded reCAPTCHA script. Development works through a private debug token; the judge-safe production attestation path remains unresolved.
+- Sprint 9 removed the blocked reCAPTCHA provider from the extension bundle. The public build now fails closed with cloud tailoring disabled; a clearly labeled private judge build uses a registered Firebase App Check debug token and a separate package name.
 - The dedicated no-Nano cloud-choice control and automated fallback coverage are complete; judge-machine hardware validation remains parked.
 
 ## User tasks parked

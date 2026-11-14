@@ -21,10 +21,10 @@
 
 - [x] Exact DOCX replacement, ambiguity rejection, package preservation, filename safety, fallback routing, and tracker linking pass 32 automated tests.
 - [x] Type checking, production build, packaging, dependency audit, and diff checks pass.
-- [x] The installed extension shows the corrected **NOT RUN** badge and tailored-file state. Chrome diagnostics contained only the previously documented App Check/reCAPTCHA CSP blocker and no new Sprint 8 runtime error.
+- [x] The installed extension shows the corrected **NOT RUN** badge and tailored-file state. Sprint 9 removes the previously documented App Check/reCAPTCHA CSP blocker from the bundle.
 
 ## Parked external checks
 
 - Open a generated real résumé in Word and visually approve its layout.
 - Test the unavailable-Nano path on separate judge-like hardware.
-- Resolve production packaged-extension App Check attestation or distribute the documented private judge build.
+- Share the private judge build and registered debug token only through Devpost's private testing instructions.

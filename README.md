@@ -33,7 +33,7 @@ npm install
 npm run verify
 ```
 
-Load `dist/` from `chrome://extensions` with Developer mode enabled. Firebase AI Logic and App Check are configured for the InDigitual Job Copilot Firebase project.
+Load `dist/` from `chrome://extensions` with Developer mode enabled. The public build keeps local features available and disables cloud tailoring because Manifest V3 cannot load the web reCAPTCHA attestation script.
 
 For a private App Check debug build:
 
@@ -41,7 +41,7 @@ For a private App Check debug build:
 npm run build:debug
 ```
 
-To embed an already registered token in a private judge build, set `JOB_COPILOT_APP_CHECK_DEBUG_TOKEN` only for that local build. The generated `dist/` directory is ignored and must be rebuilt in production mode before publishing.
+For a portable private judge build, set `JOB_COPILOT_APP_CHECK_DEBUG_TOKEN` to an already registered token, then run `npm run build:judge` and `npm run package`. The separate `-private-judge.zip` filename prevents confusion with the public package. The build fails if the token is missing, and the generated `dist/` and `release/` directories are ignored.
 
 Never publish a debug build or commit an App Check debug token. A private judge build and token may be shared only through Devpost's private testing instructions.
 

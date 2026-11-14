@@ -5,8 +5,6 @@ export const firebaseConfig = {
   appId: "1:376304104202:web:acac71075a1f00c28880f3"
 };
 
-export const recaptchaEnterpriseSiteKey = "6LcbVh0uAAAAAHVGLnrZlan2uvKoDHFV95yVpuRp";
-
 export const hasFirebaseConfig = !Object.values(firebaseConfig).some((value) =>
   value.startsWith("REPLACE_")
 );

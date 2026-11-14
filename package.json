@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:debug": "node scripts/build.mjs --debug",
+    "build:judge": "node scripts/build.mjs --judge",
     "package": "node scripts/package.mjs",
     "pretest": "node scripts/test-build.mjs",
     "test": "node --test test/*.test.js",
