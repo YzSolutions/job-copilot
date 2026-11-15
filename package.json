@@ -1,8 +1,8 @@
 {
   "name": "indigitual-hybrid-job-copilot",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Privacy-visible hybrid AI proof for the Google #BuildHybridAI 2026 hackathon",
+  "description": "Privacy-visible hybrid AI job application copilot for the Google #BuildHybridAI 2026 hackathon",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",

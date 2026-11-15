@@ -5,9 +5,11 @@ import { execFileSync } from "node:child_process";
 const root = resolve(import.meta.dirname, "..");
 const release = resolve(root, "release");
 const manifest = JSON.parse(await readFile(resolve(root, "dist", "manifest.json"), "utf8"));
+const packageJson = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
+if (manifest.version !== packageJson.version) throw new Error("Manifest and package versions must match.");
 const privateJudge = manifest.name.endsWith("(Private Judge)");
 if (manifest.name.endsWith("(Debug)")) throw new Error("Local debug builds are not portable. Use npm run build:judge with a registered token.");
-const zip = resolve(release, `indigitual-hybrid-job-copilot-0.1.0${privateJudge ? "-private-judge" : ""}.zip`);
+const zip = resolve(release, `${packageJson.name}-${packageJson.version}${privateJudge ? "-private-judge" : ""}.zip`);
 
 await mkdir(release, { recursive: true });
 await rm(zip, { force: true });

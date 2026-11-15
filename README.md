@@ -1,6 +1,6 @@
-# InDigitual Ventures — Job Copilot
+# InDigitual Ventures — Job Copilot 1.0
 
-Sprint 1 technical proof for the Google #BuildHybridAI 2026 hackathon. The Chrome extension demonstrates two deliberately separate Firebase AI Logic paths:
+Release candidate for the Google #BuildHybridAI 2026 hackathon. The Chrome extension provides two deliberately separate Firebase AI Logic paths:
 
 - `ONLY_ON_DEVICE` for private résumé matching with Gemini Nano in Chrome.
 - `ONLY_IN_CLOUD` only after the user previews and approves the exact professional content being transmitted.
@@ -23,6 +23,7 @@ The interface reports the inference source and never silently falls back from lo
 - Explicit cloud choice when Gemini Nano is unavailable
 - Production and private debug builds
 - Packaged ZIP for judge installation
+- End-to-end owner acceptance script
 
 Original DOCX files are stored in extension-local IndexedDB when imported. Existing text-only imports must be re-imported once before their first tailored download; the file remains local.
 
@@ -44,6 +45,10 @@ npm run build:debug
 For a portable private judge build, set `JOB_COPILOT_APP_CHECK_DEBUG_TOKEN` to an already registered token, then run `npm run build:judge` and `npm run package`. The separate `-private-judge.zip` filename prevents confusion with the public package. The build fails if the token is missing, and the generated `dist/` and `release/` directories are ignored.
 
 Never publish a debug build or commit an App Check debug token. A private judge build and token may be shared only through Devpost's private testing instructions.
+
+## End-to-end acceptance
+
+Follow `END_TO_END_TEST.md` to test the complete product with the five résumé variants, a real job page, local matching, explicit cloud consent, tailored DOCX export, reviewed autofill, local tracking, and persistence. The test never submits an employer application.
 
 ## Privacy boundary
 

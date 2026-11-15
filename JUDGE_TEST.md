@@ -1,4 +1,4 @@
-# Sprint 9 judge test
+# Job Copilot 1.0 judge test
 
 The public repository and production ZIP do not contain an App Check debug token. The public build is deliberately local-only. The organizer provides the private judge ZIP through Devpost's private testing instructions; it uses Firebase's documented debug-token exchange without loading the reCAPTCHA script blocked by Manifest V3. Never publish this build or token.
 

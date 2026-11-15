@@ -42,7 +42,7 @@ Hybrid AI is most valuable when users can understand and control the boundary, n
 
 ### What's next
 
-Next we will complete judge-machine hardware checks, Chrome Web Store preparation, and the demo recording. Identity and demographic answers remain local by default, and cloud AI receives only the smallest approved professional payload.
+Next we will complete the separate no-Nano judge-machine check, Chrome Web Store preparation, and the demo recording. Identity and demographic answers remain local by default, and cloud AI receives only the smallest approved professional payload.
 
 ## Built with
 
